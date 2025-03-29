@@ -63,7 +63,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "gradle build"
+args = "./gradlew build --no-daemon"
 
 [deployment]
 run = ["sh", "-c", "./gradlew build"]

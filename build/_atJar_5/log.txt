@@ -1,0 +1,7 @@
+Java Launcher: /home/runner/.gradle/jdks/adoptium-8-x64-hotspot-linux/jdk8u442-b06/bin/java
+Arguments: '--inJar, /home/runner/.gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.16.5-36.2.39/forge-1.16.5-36.2.39-injected.jar, --outJar, /home/runner/.gradle/caches/forge_gradle/minecraft_user_repo/net/minecraftforge/forge/1.16.5-36.2.39_mapped_official_1.16.5/forge-1.16.5-36.2.39_mapped_official_1.16.5.jar, --logFile, accesstransform.log, --atFile, /home/runner/workspace/build/_atJar_5/parent_at.cfg'
+Classpath:
+ - /home/runner/.gradle/caches/forge_gradle/maven_downloader/net/minecraftforge/accesstransformers/8.0.7/accesstransformers-8.0.7-fatjar.jar
+Working directory: /home/runner/workspace/build/_atJar_5
+Main class: net.minecraftforge.accesstransformer.TransformerProcessor
+====================================

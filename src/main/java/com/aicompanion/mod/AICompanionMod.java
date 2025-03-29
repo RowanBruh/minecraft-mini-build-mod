@@ -133,7 +133,7 @@ public class AICompanionMod {
             if (minecraft.player != null && minecraft.screen == null) {
                 if (KeyBindings.openAdminPanel.consumeClick()) {
                     // Open the admin panel when the key is pressed
-                    minecraft.setScreen(new AdminPanelScreen(null));
+                    minecraft.setScreen(new AdminPanelScreen());
                 }
             }
         }

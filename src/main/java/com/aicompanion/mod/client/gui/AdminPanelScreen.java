@@ -334,8 +334,9 @@ public class AdminPanelScreen extends Screen {
                 (gameSettings, option) -> new StringTextComponent(
                         I18n.get(translationKey) + ": " + configValue.get()));
         
-        optionsRowList.addBig(slider.createButton(
-                this.minecraft.options, 0, 0, 150));
+        // Using a fixed Widget instance instead of createButton for Forge compatibility
+        Widget sliderWidget = slider.createButton(this.minecraft.options, this.width / 2 - 155, 0, 150);
+        optionsRowList.addBig(sliderWidget);
     }
     
     /**
@@ -344,20 +345,35 @@ public class AdminPanelScreen extends Screen {
     private void addServerBooleanOption(String translationKey, ForgeConfigSpec.BooleanValue configValue) {
         boolean initialValue = configValue.get();
         
+        // Create a custom checkbox button with a click handler
         CheckboxButton checkbox = new CheckboxButton(0, 0, 150, 20, 
-                new TranslationTextComponent(translationKey), initialValue);
-        
-        checkbox.onPress = () -> {
-            boolean newValue = !checkbox.selected;
-            checkbox.selected = newValue;
-            
-            // Send update to server
-            NetworkHandler.sendToServer(new AdminPanelMessage(
-                    translationKey,
-                    String.valueOf(newValue)));
+                new TranslationTextComponent(translationKey), initialValue) {
+            @Override
+            public void onPress() {
+                this.selected = !this.selected;
+                
+                // Send update to server
+                NetworkHandler.sendToServer(new AdminPanelMessage(
+                        translationKey,
+                        String.valueOf(this.selected)));
+            }
         };
         
-        optionsRowList.addSmall(checkbox, null);
+        // Add the widget to our UI
+        this.addWidget(checkbox);
+        
+        // Add the widget to a row in the options list
+        addWidgetToOptionsRow(checkbox, false);
+    }
+    
+    /**
+     * Helper method to add a widget to the options row list
+     * This uses a workaround for the incompatible types issue
+     */
+    private void addWidgetToOptionsRow(Widget widget, boolean wide) {
+        // Create a new row manually and add it to the list
+        OptionsRowList.Row row = new OptionsRowList.Row(widget, wide ? null : new Button(0, 0, 0, 0, StringTextComponent.EMPTY, (b) -> {}));
+        optionsRowList.children().add(row);
     }
     
     /**
@@ -382,8 +398,10 @@ public class AdminPanelScreen extends Screen {
                 (gameSettings, option) -> new StringTextComponent(
                         I18n.get(translationKey) + ": " + currentValue[0]));
         
-        optionsRowList.addBig(slider.createButton(
-                this.minecraft.options, 0, 0, 150));
+        // Using a fixed Widget instance instead of createButton for Forge compatibility
+        Widget sliderWidget = slider.createButton(this.minecraft.options, this.width / 2 - 155, 0, 150);
+        this.addWidget(sliderWidget);
+        addWidgetToOptionsRow(sliderWidget, true);
     }
     
     /**
@@ -408,8 +426,10 @@ public class AdminPanelScreen extends Screen {
                 (gameSettings, option) -> new StringTextComponent(
                         I18n.get(translationKey) + ": " + String.format("%.2f", currentValue[0])));
         
-        optionsRowList.addBig(slider.createButton(
-                this.minecraft.options, 0, 0, 150));
+        // Using a fixed Widget instance instead of createButton for Forge compatibility
+        Widget sliderWidget = slider.createButton(this.minecraft.options, this.width / 2 - 155, 0, 150);
+        this.addWidget(sliderWidget);
+        addWidgetToOptionsRow(sliderWidget, true);
     }
     
     @Override

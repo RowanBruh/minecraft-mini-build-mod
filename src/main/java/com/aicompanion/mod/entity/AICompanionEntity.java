@@ -181,6 +181,18 @@ public class AICompanionEntity extends TameableEntity {
     public void setHeldItem(ItemStack stack) {
         this.heldItem = stack;
     }
+    
+    /**
+     * Get the owner's name
+     * @return The owner's name or "Unknown" if no owner
+     */
+    public String getOwnerName() {
+        LivingEntity owner = this.getOwner();
+        if (owner != null) {
+            return owner.getName().getString();
+        }
+        return "Unknown";
+    }
 
     // Command processing methods
     public void processCommand(String command, BlockPos targetPos, ItemStack item) {

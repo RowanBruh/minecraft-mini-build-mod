@@ -2,10 +2,10 @@ package com.aicompanion.mod.web.handler;
 
 import com.aicompanion.mod.AICompanionMod;
 import com.aicompanion.mod.web.security.JWTManager;
+import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
+import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
+import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 
-import javax.websocket.HandshakeResponse;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpointConfig;
 import java.util.List;
 import java.util.Map;
 
@@ -13,14 +13,15 @@ import java.util.Map;
  * Configuration for WebSocket endpoints
  * Handles authentication for WebSocket connections
  */
-public class WebSocketHandlerConfig extends ServerEndpointConfig.Configurator {
+public class WebSocketHandlerConfig implements WebSocketCreator {
     
     @Override
-    public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
+    public Object createWebSocket(ServletUpgradeRequest request, ServletUpgradeResponse response) {
         // Get token from query parameter
         Map<String, List<String>> parameters = request.getParameterMap();
+        boolean authenticated = false;
         
-        if (parameters.containsKey("token")) {
+        if (parameters != null && parameters.containsKey("token")) {
             String token = parameters.get("token").get(0);
             
             // Verify token
@@ -28,23 +29,24 @@ public class WebSocketHandlerConfig extends ServerEndpointConfig.Configurator {
                 if (JWTManager.getInstance().isTokenValid(token)) {
                     // Token is valid, proceed with handshake
                     AICompanionMod.LOGGER.info("WebSocket connection authenticated");
-                    sec.getUserProperties().put("authenticated", true);
+                    authenticated = true;
                 } else {
                     // Token is invalid, but we'll let the connection proceed
                     // and handle this in the onOpen method
                     AICompanionMod.LOGGER.warn("WebSocket connection with invalid token");
-                    sec.getUserProperties().put("authenticated", false);
                 }
             } catch (Exception e) {
                 AICompanionMod.LOGGER.error("Error validating WebSocket token", e);
-                sec.getUserProperties().put("authenticated", false);
             }
         } else {
             // No token provided
             AICompanionMod.LOGGER.warn("WebSocket connection attempt without token");
-            sec.getUserProperties().put("authenticated", false);
         }
         
-        super.modifyHandshake(sec, request, response);
+        // Store authentication status in the request
+        request.setServletAttribute("authenticated", authenticated);
+        
+        // Create and return a new WebSocketHandler instance
+        return new WebSocketHandler();
     }
 }

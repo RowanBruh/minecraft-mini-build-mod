@@ -15,7 +15,9 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
+import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import com.aicompanion.mod.web.handler.WebSocketHandler;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -126,11 +128,11 @@ public class WebServer {
             
             // Add WebSocket support
             try {
-                WebSocketServerContainerInitializer.configure(staticContext, 
-                        (servletContext, wsContainer) -> {
-                    wsContainer.addEndpoint(WebSocketHandler.class);
-                });
-            } catch (ServletException e) {
+                // Create a custom WebSocket servlet
+                ServletHolder wsHolder = new ServletHolder("ws", new CustomWebSocketServlet(this));
+                staticContext.addServlet(wsHolder, "/ws/*");
+                AICompanionMod.LOGGER.info("WebSocket support added");
+            } catch (Exception e) {
                 AICompanionMod.LOGGER.error("Failed to add WebSocket support", e);
             }
             
@@ -233,5 +235,132 @@ public class WebServer {
     public interface WebSocketSession {
         boolean isOpen();
         void sendMessage(String message) throws IOException;
+    }
+    
+    /**
+     * Custom WebSocket servlet implementation
+     */
+    private static class CustomWebSocketServlet extends WebSocketServlet {
+        private final WebServer webServer;
+        
+        public CustomWebSocketServlet(WebServer webServer) {
+            this.webServer = webServer;
+        }
+        
+        @Override
+        public void configure(WebSocketServletFactory factory) {
+            factory.getPolicy().setIdleTimeout(30000);
+            
+            // Register our custom WebSocket creator
+            factory.setCreator((req, resp) -> {
+                // Check authentication via query param
+                String token = null;
+                if (req.getParameterMap().containsKey("token") && !req.getParameterMap().get("token").isEmpty()) {
+                    token = req.getParameterMap().get("token").get(0);
+                }
+                               
+                boolean authenticated = false;
+                if (token != null) {
+                    try {
+                        authenticated = JWTManager.getInstance().isTokenValid(token);
+                    } catch (Exception e) {
+                        AICompanionMod.LOGGER.error("Error validating WebSocket token", e);
+                    }
+                }
+                
+                // Create a new socket with authentication status
+                return new SimpleWebSocket(webServer, authenticated);
+            });
+        }
+    }
+    
+    /**
+     * Simple WebSocket implementation 
+     */
+    private static class SimpleWebSocket implements org.eclipse.jetty.websocket.api.WebSocketListener {
+        private final WebServer webServer;
+        private final boolean authenticated;
+        private org.eclipse.jetty.websocket.api.Session session;
+        private UUID clientId;
+        
+        public SimpleWebSocket(WebServer webServer, boolean authenticated) {
+            this.webServer = webServer;
+            this.authenticated = authenticated;
+            this.clientId = UUID.randomUUID();
+        }
+        
+        @Override
+        public void onWebSocketConnect(org.eclipse.jetty.websocket.api.Session session) {
+            this.session = session;
+            
+            if (!authenticated) {
+                try {
+                    // Send error message and close
+                    String errorMsg = "{\"type\":\"error\",\"message\":\"Authentication failed\"}";
+                    session.getRemote().sendString(errorMsg);
+                    session.close();
+                    return;
+                } catch (IOException e) {
+                    AICompanionMod.LOGGER.error("Error closing unauthenticated WebSocket", e);
+                    return;
+                }
+            }
+            
+            // Register with WebServer
+            webServer.addClient(clientId, new JettyWebSocketSession(session));
+            
+            // Send welcome message
+            try {
+                String msg = "{\"type\":\"connection\",\"clientId\":\"" + 
+                             clientId + "\",\"message\":\"Connected to AI Companion WebSocket server\"}";
+                session.getRemote().sendString(msg);
+            } catch (IOException e) {
+                AICompanionMod.LOGGER.error("Error sending welcome message", e);
+            }
+        }
+        
+        @Override
+        public void onWebSocketText(String message) {
+            // Process incoming messages
+            AICompanionMod.LOGGER.info("WebSocket message received: " + message);
+            // Here we would parse and handle the message
+        }
+        
+        @Override
+        public void onWebSocketClose(int statusCode, String reason) {
+            webServer.removeClient(clientId);
+            AICompanionMod.LOGGER.info("WebSocket connection closed: " + reason);
+        }
+        
+        @Override
+        public void onWebSocketError(Throwable cause) {
+            AICompanionMod.LOGGER.error("WebSocket error", cause);
+        }
+        
+        @Override
+        public void onWebSocketBinary(byte[] payload, int offset, int len) {
+            // Not handling binary messages
+        }
+    }
+    
+    /**
+     * Adapter to convert Jetty WebSocket Session to our abstraction
+     */
+    private static class JettyWebSocketSession implements WebSocketSession {
+        private final org.eclipse.jetty.websocket.api.Session session;
+        
+        public JettyWebSocketSession(org.eclipse.jetty.websocket.api.Session session) {
+            this.session = session;
+        }
+        
+        @Override
+        public boolean isOpen() {
+            return session.isOpen();
+        }
+        
+        @Override
+        public void sendMessage(String message) throws IOException {
+            session.getRemote().sendString(message);
+        }
     }
 }
