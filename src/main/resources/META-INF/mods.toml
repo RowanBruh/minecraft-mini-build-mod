@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="MIT"
+
+[[mods]]
+modId="aicompanion"
+version="1.0.0"
+displayName="AI Companion Mod"
+description='''
+A Minecraft mod that adds an AI-controlled entity that players can command to perform various tasks.
+'''
+authors="AI Companion Dev Team"
+
+[[dependencies.aicompanion]]
+    modId="forge"
+    mandatory=true
+    versionRange="[36,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.aicompanion]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.5,1.17)"
+    ordering="NONE"
+    side="BOTH"

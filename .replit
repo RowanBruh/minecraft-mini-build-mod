@@ -1,0 +1,69 @@
+modules = ["java", "java-11"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Minecraft Mod Build"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "minecraft_mod_build"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "gradle_build"
+
+[[workflows.workflow]]
+name = "Minecraft Mod Build"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./gradlew build"
+
+[[workflows.workflow]]
+name = "minecraft_mod_build"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./gradlew build"
+
+[[workflows.workflow]]
+name = "gradle_build"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "gradle build"
+
+[deployment]
+run = ["sh", "-c", "./gradlew build"]

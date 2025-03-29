@@ -1,0 +1,38 @@
+{
+  "entity.aicompanion.ai_companion": "AI Companion",
+  "item.aicompanion.ai_companion_spawn_egg": "AI Companion Spawn Egg",
+  
+  "command.aicompanion.spawn": "Spawns a new AI Companion",
+  "command.aicompanion.list": "Lists all your AI Companions",
+  "command.aicompanion.help": "Shows help for AI Companion commands",
+  
+  "screen.aicompanion.admin_panel": "AI Companion Admin Panel",
+  "screen.aicompanion.manage_companions": "Manage Companions",
+  "screen.aicompanion.rename_companion": "Rename Companion",
+  "screen.aicompanion.rename_companion.description": "Enter a new name for your companion:",
+  "screen.aicompanion.command_companion": "Command Companion",
+  "screen.aicompanion.command": "Command:",
+  "screen.aicompanion.quick_commands": "Quick Commands",
+  
+  "button.aicompanion.teleport": "Teleport",
+  "button.aicompanion.rename": "Rename",
+  "button.aicompanion.remove": "Remove",
+  "button.aicompanion.command": "Command",
+  
+  "options.aicompanion.show_name_tags": "Show Name Tags",
+  "options.aicompanion.show_status_overlay": "Show Status Overlay",
+  "options.aicompanion.max_render_distance": "Max Render Distance",
+  "options.aicompanion.allow_breaking_blocks": "Allow Breaking Blocks",
+  "options.aicompanion.allow_placing_blocks": "Allow Placing Blocks",
+  "options.aicompanion.requires_food": "Requires Food",
+  "options.aicompanion.max_companions_per_player": "Max Companions Per Player",
+  "options.aicompanion.movement_speed": "Movement Speed",
+  "options.aicompanion.health_amount": "Health Amount",
+  "options.aicompanion.teleport_distance": "Teleport Distance",
+  
+  "key.categories.aicompanion": "AI Companion",
+  "key.aicompanion.open_admin_panel": "Open Admin Panel",
+  "key.aicompanion.quick_command_1": "Quick Command 1 (Follow)",
+  "key.aicompanion.quick_command_2": "Quick Command 2 (Stay)",
+  "key.aicompanion.quick_command_3": "Quick Command 3 (Help)"
+}

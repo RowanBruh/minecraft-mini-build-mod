@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft AI Companion Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <h2>AI Companion Login</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">Login</button>
+            <p id="login-error" style="color: var(--danger-color); display: none;">Invalid username or password</p>
+        </form>
+    </div>
+    
+    <!-- Main Dashboard (Hidden initially) -->
+    <div id="dashboard" class="container hidden">
+        <div class="header">
+            <h1>AI Companion Control Panel</h1>
+            <div id="connection-status">
+                <span class="status-indicator status-offline"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="sidebar">
+                <ul class="sidebar-nav">
+                    <li><a href="#companions" class="nav-link active" data-panel="companions">Companions</a></li>
+                    <li><a href="#command" class="nav-link" data-panel="command">Command</a></li>
+                    <li><a href="#inventory" class="nav-link" data-panel="inventory">Inventory</a></li>
+                    <li><a href="#settings" class="nav-link" data-panel="settings">Settings</a></li>
+                    <li><a href="#logout" class="nav-link" id="logout-link">Logout</a></li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <!-- Companions Panel -->
+                <div id="companions-panel" class="panel active">
+                    <h2>Your Companions</h2>
+                    <ul class="companion-list" id="companion-list">
+                        <!-- Will be populated with JavaScript -->
+                    </ul>
+                </div>
+                
+                <!-- Command Panel -->
+                <div id="command-panel" class="panel">
+                    <h2>Command Companion</h2>
+                    <div class="form-group">
+                        <label for="selected-companion">Selected Companion</label>
+                        <select id="selected-companion">
+                            <!-- Will be populated with JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <h3>Basic Commands</h3>
+                    <div>
+                        <button class="command-button follow" data-command="follow">Follow Me</button>
+                        <button class="command-button stay" data-command="stay">Stay Here</button>
+                        <button class="command-button attack" data-command="attack">Attack Target</button>
+                        <button class="command-button mine" data-command="mine">Mine Resource</button>
+                    </div>
+                    
+                    <h3>Custom Command</h3>
+                    <div class="form-group">
+                        <label for="custom-command">Enter Custom Command</label>
+                        <textarea id="custom-command" rows="3" placeholder="E.g., mine diamond ore until inventory full, then return to me"></textarea>
+                    </div>
+                    <button id="send-custom-command">Send Command</button>
+                </div>
+                
+                <!-- Inventory Panel -->
+                <div id="inventory-panel" class="panel">
+                    <h2>Inventory Management</h2>
+                    <div class="form-group">
+                        <label for="inventory-companion">Select Companion</label>
+                        <select id="inventory-companion">
+                            <!-- Will be populated with JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <div id="inventory-content">
+                        <!-- Will be populated with JavaScript -->
+                        <p>Select a companion to view inventory</p>
+                    </div>
+                    
+                    <h3>Inventory Actions</h3>
+                    <button id="request-items">Request Items</button>
+                    <button id="send-items">Send Items</button>
+                </div>
+                
+                <!-- Settings Panel -->
+                <div id="settings-panel" class="panel">
+                    <h2>Companion Settings</h2>
+                    <div class="form-group">
+                        <label for="settings-companion">Select Companion</label>
+                        <select id="settings-companion">
+                            <!-- Will be populated with JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <h3>Behavior Settings</h3>
+                    <div class="form-group">
+                        <label for="companion-name">Companion Name</label>
+                        <input type="text" id="companion-name">
+                    </div>
+                    <div class="form-group">
+                        <label>Behavior Mode</label>
+                        <div>
+                            <label>
+                                <input type="radio" name="behavior-mode" value="aggressive"> Aggressive
+                            </label>
+                            <label>
+                                <input type="radio" name="behavior-mode" value="defensive"> Defensive
+                            </label>
+                            <label>
+                                <input type="radio" name="behavior-mode" value="passive"> Passive
+                            </label>
+                        </div>
+                    </div>
+                    <button id="save-settings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="scripts.js"></script>
+</body>
+</html>
