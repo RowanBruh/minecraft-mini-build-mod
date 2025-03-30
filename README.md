@@ -1,4 +1,4 @@
-# AI Companion Mod for Minecraft
+# Minecraft AI Companion
 
 An innovative Minecraft mod that introduces advanced AI-controlled companion entities with dynamic interaction and management capabilities.
 
@@ -19,7 +19,7 @@ An innovative Minecraft mod that introduces advanced AI-controlled companion ent
 
 ## Installation
 
-1. Download the latest release from the [Releases](https://github.com/your-username/ai-companion-mod/releases) page
+1. Download the latest release from the [Releases](https://github.com/RowanBruh/Minecraft-AI-/releases) page
 2. Place the JAR file in your Minecraft `mods` folder
 3. Start Minecraft with Forge installed
 
