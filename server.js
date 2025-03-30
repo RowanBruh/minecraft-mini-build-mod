@@ -7,22 +7,94 @@ const server = http.createServer(app);
 const port = 5000;
 
 // Create WebSocket server
-const wss = new WebSocketServer({ server, path: '/ws' });
+const wss = new WebSocketServer({ 
+  server, 
+  path: '/ws',
+  // Enable ping/pong mechanism for connection health monitoring
+  clientTracking: true,
+  // Increase timeout values
+  perMessageDeflate: {
+    zlibDeflateOptions: {
+      chunkSize: 1024,
+      memLevel: 7,
+      level: 3
+    },
+    zlibInflateOptions: {
+      chunkSize: 10 * 1024
+    },
+    // Below means that Node.js will deduplicate a repeated message payload
+    serverNoContextTakeover: true,
+    clientNoContextTakeover: true,
+    // Below specifies the max size of compressed data buffered
+    serverMaxWindowBits: 10,
+    clientMaxWindowBits: true
+  }
+});
 
 // Connected clients
 const clients = new Set();
 
+// Function to check if WebSocket is still alive
+const isAlive = (ws) => {
+  return ws.readyState === WebSocket.OPEN;
+};
+
+// Function to safely send a message to a client
+const safeSend = (ws, message) => {
+  try {
+    if (isAlive(ws)) {
+      ws.send(typeof message === 'string' ? message : JSON.stringify(message));
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('Error sending message:', err);
+    return false;
+  }
+};
+
+// Implement heartbeat mechanism to keep connections alive
+const heartbeat = () => {
+  clients.forEach((ws) => {
+    if (!isAlive(ws)) {
+      clients.delete(ws);
+      return;
+    }
+    
+    // Send ping
+    try {
+      ws.ping();
+    } catch (error) {
+      clients.delete(ws);
+    }
+  });
+};
+
+// Set up interval for heartbeat
+const heartbeatInterval = setInterval(heartbeat, 30000);
+
+// Clean up on server close
+wss.on('close', () => {
+  clearInterval(heartbeatInterval);
+});
+
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   console.log('New WebSocket client connected');
   clients.add(ws);
   
+  // Set up pong response
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
+  
   // Send welcome message
-  ws.send(JSON.stringify({
+  safeSend(ws, {
     type: 'connection',
     status: 'connected',
     message: 'Connected to AI Companion WebSocket server'
-  }));
+  });
   
   // Handle messages from clients
   ws.on('message', (message) => {
@@ -35,16 +107,23 @@ wss.on('connection', (ws) => {
         case 'skin':
           handleSkinCommand(ws, data);
           break;
+        case 'ping':
+          // Handle ping request (client checking connection)
+          safeSend(ws, {
+            type: 'pong',
+            timestamp: Date.now()
+          });
+          break;
         default:
           // Mock command response
           handleCommand(ws, data);
       }
     } catch (error) {
       console.error('Error processing message:', error);
-      ws.send(JSON.stringify({
+      safeSend(ws, {
         type: 'error',
         message: 'Invalid message format'
-      }));
+      });
     }
   });
   
@@ -67,8 +146,8 @@ function handleSkinCommand(ws, data) {
   
   // Simulate server processing
   setTimeout(() => {
-    // Send success response
-    ws.send(JSON.stringify({
+    // Send success response using safeSend
+    safeSend(ws, {
       type: 'command_result',
       commandId: data.commandId,
       success: true,
@@ -78,7 +157,22 @@ function handleSkinCommand(ws, data) {
         skinType: data.skinType || 'custom',
         skinPath: data.skinPath
       }
-    }));
+    });
+    
+    // Broadcast to other clients if needed
+    clients.forEach(client => {
+      if (client !== ws && isAlive(client)) {
+        safeSend(client, {
+          type: 'update',
+          updateType: 'skin',
+          companionId: data.companionId,
+          data: {
+            skinType: data.skinType || 'custom',
+            skinPath: data.skinPath
+          }
+        });
+      }
+    });
   }, 500);
 }
 
@@ -88,15 +182,15 @@ function handleCommand(ws, data) {
   
   // Simulate server processing
   setTimeout(() => {
-    // Send success response
-    ws.send(JSON.stringify({
+    // Send success response using safeSend
+    safeSend(ws, {
       type: 'command_result',
       commandId: data.commandId,
       success: true,
       command: data.command,
       message: `Command ${data.command} executed successfully`,
       data: {}
-    }));
+    });
   }, 500);
 }
 

@@ -226,33 +226,133 @@ function checkExistingSession() {
 }
 
 // Initialize WebSocket connection
+// WebSocket reconnection variables
+let reconnectAttempts = 0;
+let reconnectInterval = 1000; // Start with 1 second
+let maxReconnectInterval = 30000; // Max 30 seconds
+let maxReconnectAttempts = 10;
+let isReconnecting = false;
+let reconnectTimer = null;
+let pingInterval = null;
+
 function initWebSocket() {
+    // Prevent multiple reconnection attempts running simultaneously
+    if (isReconnecting) return;
+    isReconnecting = true;
+    
+    // Clean up any existing connection
+    if (webSocket) {
+        try {
+            webSocket.close();
+        } catch (error) {
+            console.error('Error closing existing WebSocket:', error);
+        }
+    }
+    
+    // Clear any existing intervals/timers
+    if (pingInterval) clearInterval(pingInterval);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    
+    // Build WebSocket URL with authentication token
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws?token=${authToken}`;
     
-    webSocket = new WebSocket(wsUrl);
+    console.log(`Connecting to WebSocket (Attempt ${reconnectAttempts + 1})...`);
     
-    webSocket.onopen = function() {
-        console.log('WebSocket connection established');
-        updateConnectionStatus(true);
-    };
+    try {
+        webSocket = new WebSocket(wsUrl);
+        
+        webSocket.onopen = function() {
+            console.log('WebSocket connection established');
+            updateConnectionStatus(true);
+            
+            // Reset reconnection parameters on successful connection
+            reconnectAttempts = 0;
+            reconnectInterval = 1000;
+            isReconnecting = false;
+            
+            // Set up ping interval to keep connection alive
+            pingInterval = setInterval(() => {
+                if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+                    try {
+                        // Send a ping message every 20 seconds to keep the connection alive
+                        webSocket.send(JSON.stringify({
+                            type: 'ping',
+                            timestamp: Date.now()
+                        }));
+                    } catch (error) {
+                        console.error('Error sending ping:', error);
+                        tryReconnect();
+                    }
+                }
+            }, 20000);
+        };
+        
+        webSocket.onmessage = function(event) {
+            try {
+                const message = JSON.parse(event.data);
+                console.log('Received WebSocket message:', message);
+                handleWebSocketMessage(message);
+            } catch (error) {
+                console.error('Error parsing WebSocket message:', error);
+            }
+        };
+        
+        webSocket.onclose = function(event) {
+            console.log('WebSocket connection closed', event);
+            updateConnectionStatus(false);
+            
+            // Clear ping interval
+            if (pingInterval) {
+                clearInterval(pingInterval);
+                pingInterval = null;
+            }
+            
+            // Try to reconnect with exponential backoff
+            tryReconnect();
+        };
+        
+        webSocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            updateConnectionStatus(false);
+            // Don't try to reconnect here - the close handler will be called next
+        };
+    } catch (error) {
+        console.error('Error initializing WebSocket:', error);
+        isReconnecting = false;
+        tryReconnect();
+    }
+}
+
+// Try to reconnect with exponential backoff
+function tryReconnect() {
+    // Check if we've exceeded max attempts
+    if (reconnectAttempts >= maxReconnectAttempts) {
+        console.error(`Failed to reconnect after ${maxReconnectAttempts} attempts`);
+        
+        // Show a message to the user
+        const connectionError = document.getElementById('connection-error');
+        if (connectionError) {
+            connectionError.textContent = 'Connection lost. Please reload the page.';
+            connectionError.style.display = 'block';
+        } else {
+            alert('Connection lost. Please reload the page to reconnect.');
+        }
+        return;
+    }
     
-    webSocket.onmessage = function(event) {
-        const message = JSON.parse(event.data);
-        handleWebSocketMessage(message);
-    };
+    // Increment attempts and compute next delay with exponential backoff
+    reconnectAttempts++;
+    isReconnecting = false;
     
-    webSocket.onclose = function() {
-        console.log('WebSocket connection closed');
-        updateConnectionStatus(false);
-        // Try to reconnect after 5 seconds
-        setTimeout(initWebSocket, 5000);
-    };
+    // Calculate next delay with exponential backoff
+    const delay = Math.min(reconnectInterval * Math.pow(1.5, reconnectAttempts - 1), maxReconnectInterval);
+    console.log(`WebSocket reconnecting in ${delay}ms (Attempt ${reconnectAttempts})`);
     
-    webSocket.onerror = function(error) {
-        console.error('WebSocket error:', error);
-        updateConnectionStatus(false);
-    };
+    // Try to reconnect after the delay
+    reconnectTimer = setTimeout(() => {
+        initWebSocket();
+    }, delay);
 }
 
 // Handle incoming WebSocket messages
@@ -271,6 +371,40 @@ function handleWebSocketMessage(message) {
             break;
         case 'command_result':
             handleCommandResult(message);
+            break;
+        case 'pong':
+            // Server responded to our ping, connection is healthy
+            console.log('Received pong from server, latency:', Date.now() - message.timestamp, 'ms');
+            break;
+        case 'update':
+            // Handle broadcasted updates
+            if (message.updateType === 'skin' && message.companionId) {
+                // Update the UI if this companion is selected
+                if (message.companionId === selectedCompanionId) {
+                    // Update skin preview
+                    const skinPreview = document.getElementById('skin-preview');
+                    if (skinPreview && message.data) {
+                        if (message.data.skinPath) {
+                            skinPreview.src = message.data.skinPath;
+                        } else if (message.data.skinType) {
+                            skinPreview.src = `skins/${message.data.skinType}.png`;
+                        }
+                    }
+                }
+                
+                // Refresh companion list to show updated skin
+                loadCompanions();
+            }
+            break;
+        case 'connection':
+            console.log('Connection status:', message.status);
+            break;
+        case 'error':
+            console.error('Server error:', message.message);
+            // Show error to user if needed
+            if (message.critical) {
+                alert('Server error: ' + message.message);
+            }
             break;
         default:
             console.log('Unknown message type:', message.type);
