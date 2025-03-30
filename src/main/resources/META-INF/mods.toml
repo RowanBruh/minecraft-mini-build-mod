@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[36,)"
+loaderVersion="[47,)"
 license="MIT"
 
 [[mods]]
@@ -14,13 +14,13 @@ authors="AI Companion Dev Team"
 [[dependencies.aicompanion]]
     modId="forge"
     mandatory=true
-    versionRange="[36,)"
+    versionRange="[47,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.aicompanion]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.16.5,1.17)"
+    versionRange="[1.21.5,1.22)"
     ordering="NONE"
     side="BOTH"

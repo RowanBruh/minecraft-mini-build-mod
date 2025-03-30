@@ -14,12 +14,12 @@ An innovative Minecraft mod that introduces advanced AI-controlled companion ent
 
 ## Requirements
 
-- Minecraft 1.16.5
-- Forge 36.2.39
+- Minecraft 1.21.5
+- Forge 47.1.0
 
 ## Installation
 
-1. Download the latest release from the [Releases](https://github.com/RowanBruh/Minecraft-AI-/releases) page
+1. Download the latest release from the [Releases](https://github.com/RowanBruh/Minecraft-AI-Companion/releases) page
 2. Place the JAR file in your Minecraft `mods` folder
 3. Start Minecraft with Forge installed
 
