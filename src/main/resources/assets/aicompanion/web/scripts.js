@@ -279,13 +279,63 @@ function handleWebSocketMessage(message) {
 
 // Handle specific command results
 function handleCommandResult(message) {
+    console.log('Command result received:', message);
+    
+    // Handle skin command results
     if (message.command === 'skin') {
+        // Hide loading indicator
+        const loadingIndicator = document.getElementById('skin-loading');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+        
         if (message.success) {
-            alert('Skin updated successfully!');
+            // Show success message
+            const successMessage = document.getElementById('skin-success');
+            if (successMessage) {
+                successMessage.textContent = message.message || 'Skin updated successfully!';
+                successMessage.style.display = 'block';
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000);
+            } else {
+                // Fallback to alert if element doesn't exist
+                alert('Skin updated successfully!');
+            }
+            
+            // Update skin preview if available
+            if (message.data && (message.data.skinType || message.data.skinPath)) {
+                const skinPreview = document.getElementById('skin-preview');
+                if (skinPreview) {
+                    if (message.data.skinPath) {
+                        skinPreview.src = message.data.skinPath;
+                    } else if (message.data.skinType) {
+                        skinPreview.src = `skins/${message.data.skinType}.png`;
+                    }
+                }
+            }
         } else {
-            alert('Failed to update skin: ' + message.message);
+            // Show error message
+            const errorMessage = document.getElementById('skin-error');
+            if (errorMessage) {
+                errorMessage.textContent = message.message || 'Failed to update skin';
+                errorMessage.style.display = 'block';
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            } else {
+                // Fallback to alert if element doesn't exist
+                alert('Failed to update skin: ' + (message.message || 'Unknown error'));
+            }
         }
     }
+    
+    // Handle other command results
+    // ...
 }
 
 // Handle command response
@@ -869,9 +919,12 @@ function sendSkinCommand(companionId, skinType, skinPath = '') {
         return;
     }
     
+    // Generate a unique command ID for tracking the response
+    const commandId = Date.now().toString();
+    
     const message = {
-        type: 'command',
-        command: 'skin',
+        type: 'skin',
+        commandId: commandId,
         companionId: companionId,
         skinType: skinType,
         skinPath: skinPath
@@ -880,6 +933,9 @@ function sendSkinCommand(companionId, skinType, skinPath = '') {
     try {
         webSocket.send(JSON.stringify(message));
         console.log('Skin command sent:', message);
+        
+        // Show loading indicator
+        document.getElementById('skin-loading').style.display = 'block';
     } catch (error) {
         console.error('Error sending skin command:', error);
         alert('Failed to send skin command: ' + error.message);

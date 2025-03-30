@@ -171,10 +171,104 @@ app.get('/api/auth/validate', (req, res) => {
   res.json({ valid: true });
 });
 
-// Mock companions endpoint
+// Mock companions endpoint with sample data
 app.get('/api/companions', (req, res) => {
-  // Return empty array since this is just a demo
-  res.json([]);
+  // Return sample companions for demonstration
+  res.json([
+    {
+      id: '12345678-1234-1234-1234-123456789abc',
+      name: 'Guardian',
+      status: 'active',
+      skinType: 'default',
+      lastPosition: { x: 100, y: 64, z: 200 },
+      inventory: [],
+      settings: {
+        followDistance: 5,
+        behavior: 'follow',
+        attackHostiles: true,
+        autoCollect: false
+      }
+    },
+    {
+      id: '87654321-4321-4321-4321-cba987654321',
+      name: 'Wizard',
+      status: 'active',
+      skinType: 'wizard',
+      lastPosition: { x: -150, y: 70, z: 50 },
+      inventory: [],
+      settings: {
+        followDistance: 3,
+        behavior: 'guard',
+        attackHostiles: true,
+        autoCollect: true
+      }
+    }
+  ]);
+});
+
+// Mock companion details endpoint
+app.get('/api/companions/:id', (req, res) => {
+  const companionId = req.params.id;
+  
+  // Return mock details based on ID
+  if (companionId === '12345678-1234-1234-1234-123456789abc') {
+    res.json({
+      id: '12345678-1234-1234-1234-123456789abc',
+      name: 'Guardian',
+      status: 'active',
+      skinType: 'default',
+      lastPosition: { x: 100, y: 64, z: 200 },
+      inventory: [],
+      settings: {
+        followDistance: 5,
+        behavior: 'follow',
+        attackHostiles: true,
+        autoCollect: false
+      }
+    });
+  } else if (companionId === '87654321-4321-4321-4321-cba987654321') {
+    res.json({
+      id: '87654321-4321-4321-4321-cba987654321',
+      name: 'Wizard',
+      status: 'active',
+      skinType: 'wizard',
+      lastPosition: { x: -150, y: 70, z: 50 },
+      inventory: [],
+      settings: {
+        followDistance: 3,
+        behavior: 'guard',
+        attackHostiles: true,
+        autoCollect: true
+      }
+    });
+  } else {
+    res.status(404).json({ error: 'Companion not found' });
+  }
+});
+
+// Mock companion inventory endpoint
+app.get('/api/companions/:id/inventory', (req, res) => {
+  // Return mock inventory data
+  res.json([
+    { id: 'item_1', name: 'Stone Sword', count: 1, slot: 0 },
+    { id: 'item_2', name: 'Bread', count: 8, slot: 1 },
+    { id: 'item_3', name: 'Iron Pickaxe', count: 1, slot: 2 }
+  ]);
+});
+
+// Mock skin update endpoint
+app.post('/api/companions/:id/skin', express.json(), (req, res) => {
+  const companionId = req.params.id;
+  const { skinType } = req.body;
+  
+  console.log(`Updating skin for companion ${companionId} to ${skinType}`);
+  
+  // Simulate success response
+  res.json({
+    success: true,
+    message: `Skin updated to ${skinType}`,
+    skinType: skinType
+  });
 });
 
 // Catch-all route to serve the index.html
@@ -182,7 +276,40 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'src/main/resources/assets/aicompanion/web/index.html'));
 });
 
-app.listen(port, () => {
+// Use the HTTP server instead of the Express app directly
+server.listen(port, '0.0.0.0', () => {
   console.log(`Web server running at http://localhost:${port}`);
+  console.log(`WebSocket server running at ws://localhost:${port}/ws`);
   console.log(`Default admin credentials: username=admin, password=password`);
 });
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+});
+
+// Handle process termination
+process.on('SIGINT', () => {
+  console.log('Server shutting down...');
+  
+  // Close all WebSocket connections
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.close(1000, 'Server shutting down');
+    }
+  });
+  
+  // Close the server
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+// Keep the process alive
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
+// Log startup complete
+console.log('Server initialization complete');
