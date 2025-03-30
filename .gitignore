@@ -1,0 +1,49 @@
+# Gradle files
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Eclipse files
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VSCode files
+.vscode/
+
+# Minecraft-specific files
+run/
+logs/
+
+# Node.js files
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Custom uploads
+uploads/
+custom_skins/
+
+# Replit-specific files
+.replit
+replit.nix
