@@ -180,6 +180,19 @@ function handleSkinCommand(ws, data) {
 function handleCommand(ws, data) {
   console.log('Handling command:', data);
   
+  let responseMessage = `Command ${data.command} executed successfully`;
+  let responseData = {};
+  
+  // Specific handling for different command types
+  if (data.command === 'use') {
+    responseMessage = `Using item ${data.itemName || 'item'}`;
+    responseData = {
+      itemName: data.itemName || 'Unknown Item',
+      targetPosition: data.targetPosition,
+      targetEntity: data.targetEntity
+    };
+  }
+  
   // Simulate server processing
   setTimeout(() => {
     // Send success response using safeSend
@@ -188,8 +201,8 @@ function handleCommand(ws, data) {
       commandId: data.commandId,
       success: true,
       command: data.command,
-      message: `Command ${data.command} executed successfully`,
-      data: {}
+      message: responseMessage,
+      data: responseData
     });
   }, 500);
 }

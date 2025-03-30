@@ -4,8 +4,10 @@ import com.aicompanion.mod.entity.ai.goal.BreakBlockGoal;
 import com.aicompanion.mod.entity.ai.goal.FollowOwnerGoal;
 import com.aicompanion.mod.entity.ai.goal.MoveToBlockGoal;
 import com.aicompanion.mod.entity.ai.goal.PlaceBlockGoal;
+import com.aicompanion.mod.entity.ai.goal.UseItemGoal;
 
 import net.minecraft.entity.AgeableEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MobEntity;
@@ -38,8 +40,10 @@ public class AICompanionEntity extends TameableEntity {
     private static final DataParameter<Boolean> IS_ACTIVE = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.BOOLEAN);
     private static final DataParameter<String> SKIN_TYPE = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.STRING);
     private static final DataParameter<String> SKIN_PATH = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.STRING);
+    private static final DataParameter<String> TARGET_ENTITY_ID = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.STRING);
     
     private ItemStack heldItem = ItemStack.EMPTY;
+    private UUID targetEntityUUID = null;
     
     public AICompanionEntity(EntityType<? extends TameableEntity> entityType, World world) {
         super(entityType, world);
@@ -52,9 +56,10 @@ public class AICompanionEntity extends TameableEntity {
         this.goalSelector.addGoal(3, new MoveToBlockGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new BreakBlockGoal(this));
         this.goalSelector.addGoal(5, new PlaceBlockGoal(this));
-        this.goalSelector.addGoal(6, new WaterAvoidingRandomWalkingGoal(this, 1.0D));
-        this.goalSelector.addGoal(7, new LookAtGoal(this, PlayerEntity.class, 6.0F));
-        this.goalSelector.addGoal(8, new LookRandomlyGoal(this));
+        this.goalSelector.addGoal(6, new UseItemGoal(this, 1.0D, 5.0F));
+        this.goalSelector.addGoal(7, new WaterAvoidingRandomWalkingGoal(this, 1.0D));
+        this.goalSelector.addGoal(8, new LookAtGoal(this, PlayerEntity.class, 6.0F));
+        this.goalSelector.addGoal(9, new LookRandomlyGoal(this));
     }
 
     @Override
@@ -67,6 +72,7 @@ public class AICompanionEntity extends TameableEntity {
         this.entityData.define(IS_ACTIVE, true);
         this.entityData.define(SKIN_TYPE, "default");
         this.entityData.define(SKIN_PATH, "");
+        this.entityData.define(TARGET_ENTITY_ID, "");
     }
 
     @Override
@@ -84,6 +90,10 @@ public class AICompanionEntity extends TameableEntity {
             CompoundNBT itemTag = new CompoundNBT();
             this.heldItem.save(itemTag);
             compound.put("HeldItem", itemTag);
+        }
+        
+        if (this.getTargetEntityId() != null) {
+            compound.putString("TargetEntityId", this.getTargetEntityId().toString());
         }
     }
 
@@ -108,6 +118,14 @@ public class AICompanionEntity extends TameableEntity {
             CompoundNBT itemTag = compound.getCompound("HeldItem");
             this.heldItem = ItemStack.of(itemTag);
         }
+        
+        if (compound.contains("TargetEntityId")) {
+            try {
+                this.setTargetEntityId(UUID.fromString(compound.getString("TargetEntityId")));
+            } catch (IllegalArgumentException e) {
+                // Invalid UUID, ignore
+            }
+        }
     }
 
     @Override
@@ -125,7 +143,7 @@ public class AICompanionEntity extends TameableEntity {
                 player.sendMessage(new StringTextComponent("Current Task: " + this.getCurrentTask()), UUID.randomUUID());
                 player.sendMessage(new StringTextComponent("Skin: " + this.getSkinType() + 
                         (this.getSkinPath().isEmpty() ? "" : " (" + this.getSkinPath() + ")")), UUID.randomUUID());
-                player.sendMessage(new StringTextComponent("Use commands: /aicompanion <follow|stay|move|break|place|skin>"), UUID.randomUUID());
+                player.sendMessage(new StringTextComponent("Use commands: /aicompanion <follow|stay|move|break|place|use|skin>"), UUID.randomUUID());
             }
             return ActionResultType.SUCCESS;
         }
@@ -241,6 +259,61 @@ public class AICompanionEntity extends TameableEntity {
     public void setSkinPath(String skinPath) {
         this.entityData.set(SKIN_PATH, skinPath);
     }
+    
+    /**
+     * Get the target entity UUID if set
+     */
+    @Nullable
+    public UUID getTargetEntityId() {
+        String id = this.entityData.get(TARGET_ENTITY_ID);
+        if (id != null && !id.isEmpty()) {
+            try {
+                return UUID.fromString(id);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Set the target entity UUID
+     */
+    public void setTargetEntityId(@Nullable UUID uuid) {
+        this.entityData.set(TARGET_ENTITY_ID, uuid != null ? uuid.toString() : "");
+        this.targetEntityUUID = uuid;
+    }
+    
+    /**
+     * Get the target entity instance
+     */
+    @Nullable
+    public LivingEntity getTargetEntity() {
+        UUID id = getTargetEntityId();
+        if (id == null) {
+            return null;
+        }
+        
+        // Look through all entities to find the one with this UUID
+        for (Entity entity : this.level.getEntities(this, this.getBoundingBox().inflate(32.0D))) {
+            if (entity instanceof LivingEntity && entity.getUUID().equals(id)) {
+                return (LivingEntity) entity;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Set a living entity as the target for this companion
+     */
+    public void setTargetEntity(@Nullable LivingEntity entity) {
+        if (entity == null) {
+            setTargetEntityId(null);
+        } else {
+            setTargetEntityId(entity.getUUID());
+        }
+    }
 
     // Command processing methods
     public void processCommand(String command, BlockPos targetPos, ItemStack item) {
@@ -330,6 +403,47 @@ public class AICompanionEntity extends TameableEntity {
                     ((PlayerEntity) this.getOwner()).sendMessage(
                             new StringTextComponent("AI Companion skin set to: " + skinType + 
                                     (skinPath.isEmpty() ? "" : " (" + skinPath + ")")), 
+                            UUID.randomUUID());
+                }
+                break;
+                
+            case "use":
+                // Command format: /aicompanion use [item] [entity/position]
+                if (!item.isEmpty()) {
+                    // Set the item to use
+                    this.setHeldItem(item.copy());
+                    
+                    // Check if we have a target position
+                    if (targetPos != null) {
+                        this.setTargetPos(targetPos);
+                        
+                        // Clear any target entity when using at a position
+                        this.setTargetEntity(null);
+                        
+                        if (this.getOwner() instanceof PlayerEntity) {
+                            ((PlayerEntity) this.getOwner()).sendMessage(
+                                    new StringTextComponent("AI Companion will use " + 
+                                            item.getDisplayName().getString() + " at position"), 
+                                    UUID.randomUUID());
+                        }
+                    } else {
+                        // If no position, attempt to use on self or owner
+                        LivingEntity targetEntity = this.getOwner();
+                        this.setTargetEntity(targetEntity);
+                        
+                        if (this.getOwner() instanceof PlayerEntity) {
+                            ((PlayerEntity) this.getOwner()).sendMessage(
+                                    new StringTextComponent("AI Companion will use " + 
+                                            item.getDisplayName().getString()), 
+                                    UUID.randomUUID());
+                        }
+                    }
+                    
+                    // Set task to "use" to trigger the UseItemGoal
+                    this.setCurrentTask("use");
+                } else if (this.getOwner() instanceof PlayerEntity) {
+                    ((PlayerEntity) this.getOwner()).sendMessage(
+                            new StringTextComponent("Cannot use: No valid item specified"), 
                             UUID.randomUUID());
                 }
                 break;

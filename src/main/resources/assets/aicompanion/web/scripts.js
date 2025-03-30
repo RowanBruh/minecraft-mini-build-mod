@@ -67,6 +67,7 @@ function attachEventListeners() {
     // Inventory action buttons
     document.getElementById('request-items').addEventListener('click', () => handleInventoryAction('request'));
     document.getElementById('send-items').addEventListener('click', () => handleInventoryAction('send'));
+    document.getElementById('use-item').addEventListener('click', () => handleInventoryAction('use'));
     
     // Settings tabs
     settingsTabs.forEach(tab => {
@@ -703,6 +704,23 @@ function handleInventoryAction(action) {
         selectedItems.push(slot.getAttribute('data-item-id'));
     });
     
+    // Special handling for "use" action
+    if (action === 'use') {
+        if (selectedItems.length === 0) {
+            alert('Please select an item to use');
+            return;
+        }
+        
+        if (selectedItems.length > 1) {
+            alert('Please select only one item to use at a time');
+            return;
+        }
+        
+        // Send WebSocket command to use the item
+        sendUseItemCommand(companionId, selectedItems[0]);
+        return;
+    }
+    
     fetch(`/api/companions/${companionId}/inventory/${action}`, {
         method: 'POST',
         headers: {
@@ -1073,6 +1091,42 @@ function sendSkinCommand(companionId, skinType, skinPath = '') {
     } catch (error) {
         console.error('Error sending skin command:', error);
         alert('Failed to send skin command: ' + error.message);
+    }
+}
+
+// Send a use item command via WebSocket
+function sendUseItemCommand(companionId, itemId, targetPosition = null, targetEntity = null) {
+    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket not connected');
+        alert('Cannot send command: disconnected from server');
+        return;
+    }
+    
+    // Get item details
+    const itemName = document.querySelector(`.inventory-slot[data-item-id="${itemId}"]`) ?
+        document.querySelector(`.inventory-slot[data-item-id="${itemId}"]`).getAttribute('data-item-name') : 
+        'Unknown Item';
+    
+    // Generate a unique command ID
+    const commandId = Date.now().toString();
+    
+    const message = {
+        type: 'command',
+        commandId: commandId,
+        companionId: companionId,
+        command: 'use',
+        itemId: itemId,
+        itemName: itemName,
+        targetPosition: targetPosition,
+        targetEntity: targetEntity
+    };
+    
+    try {
+        webSocket.send(JSON.stringify(message));
+        console.log('Use item command sent:', message);
+    } catch (error) {
+        console.error('Error sending use item command:', error);
+        alert('Failed to send use item command: ' + error.message);
     }
 }
 

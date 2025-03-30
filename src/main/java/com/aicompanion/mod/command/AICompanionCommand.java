@@ -33,6 +33,7 @@ public class AICompanionCommand {
                         .suggest("move")
                         .suggest("break")
                         .suggest("place")
+                        .suggest("use")
                         .suggest("skin")
                         .suggest("help")
                         .suggest("list")
@@ -166,6 +167,23 @@ public class AICompanionCommand {
                 }
                 break;
                 
+            case "use":
+                if (!item.isEmpty()) {
+                    // Use the item with target position if provided
+                    companion.processCommand("use", pos, item);
+                } else {
+                    // Try to use what the player is holding
+                    ItemStack heldItem = player.getMainHandItem();
+                    if (!heldItem.isEmpty()) {
+                        companion.processCommand("use", pos, heldItem.copy());
+                    } else {
+                        player.sendMessage(new StringTextComponent(
+                                "Usage: /aicompanion use <item> [x y z]"), UUID.randomUUID());
+                        return 0;
+                    }
+                }
+                break;
+                
             default:
                 player.sendMessage(new StringTextComponent("Unknown command: " + command), UUID.randomUUID());
                 displayHelp(player);
@@ -187,6 +205,7 @@ public class AICompanionCommand {
         player.sendMessage(new StringTextComponent("/aicompanion move <x> <y> <z> - Send companion to position"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion break <x> <y> <z> - Make companion break block at position"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion place <x> <y> <z> [item] - Make companion place item at position"), UUID.randomUUID());
+        player.sendMessage(new StringTextComponent("/aicompanion use <item> [x y z] - Make companion use an item"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion skin [type] [path] - Change companion's skin"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion list - List all your companions"), UUID.randomUUID());
     }
