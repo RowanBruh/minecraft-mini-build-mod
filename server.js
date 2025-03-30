@@ -1,7 +1,104 @@
 const express = require('express');
 const path = require('path');
+const http = require('http');
+const { WebSocketServer, WebSocket } = require('ws');
 const app = express();
+const server = http.createServer(app);
 const port = 5000;
+
+// Create WebSocket server
+const wss = new WebSocketServer({ server, path: '/ws' });
+
+// Connected clients
+const clients = new Set();
+
+// Handle WebSocket connections
+wss.on('connection', (ws) => {
+  console.log('New WebSocket client connected');
+  clients.add(ws);
+  
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: 'connection',
+    status: 'connected',
+    message: 'Connected to AI Companion WebSocket server'
+  }));
+  
+  // Handle messages from clients
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message);
+      console.log('Received message:', data);
+      
+      // Handle different message types
+      switch (data.type) {
+        case 'skin':
+          handleSkinCommand(ws, data);
+          break;
+        default:
+          // Mock command response
+          handleCommand(ws, data);
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Invalid message format'
+      }));
+    }
+  });
+  
+  // Handle disconnection
+  ws.on('close', () => {
+    console.log('WebSocket client disconnected');
+    clients.delete(ws);
+  });
+  
+  // Handle errors
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+    clients.delete(ws);
+  });
+});
+
+// Handle skin command (mock implementation)
+function handleSkinCommand(ws, data) {
+  console.log('Handling skin command:', data);
+  
+  // Simulate server processing
+  setTimeout(() => {
+    // Send success response
+    ws.send(JSON.stringify({
+      type: 'command_result',
+      commandId: data.commandId,
+      success: true,
+      command: 'skin',
+      message: `Skin updated to ${data.skinType || 'custom'}`,
+      data: {
+        skinType: data.skinType || 'custom',
+        skinPath: data.skinPath
+      }
+    }));
+  }, 500);
+}
+
+// Handle general command (mock implementation)
+function handleCommand(ws, data) {
+  console.log('Handling command:', data);
+  
+  // Simulate server processing
+  setTimeout(() => {
+    // Send success response
+    ws.send(JSON.stringify({
+      type: 'command_result',
+      commandId: data.commandId,
+      success: true,
+      command: data.command,
+      message: `Command ${data.command} executed successfully`,
+      data: {}
+    }));
+  }, 500);
+}
 
 // Store users in memory (for demo purposes only)
 // In a real application, these would be stored in a database
