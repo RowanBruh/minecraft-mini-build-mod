@@ -39,7 +39,7 @@ body {
     font-size: 24px;
 }
 
-/* Login Screen */
+/* Login and Registration Screen */
 .login-container {
     max-width: 400px;
     margin: 100px auto;
@@ -47,6 +47,47 @@ body {
     background-color: var(--light-bg);
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Auth tabs */
+.auth-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.auth-tab {
+    padding: 10px 15px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0.7;
+}
+
+.auth-tab:hover {
+    opacity: 1;
+}
+
+.auth-tab.active {
+    opacity: 1;
+    border-bottom: 3px solid var(--primary-color);
+}
+
+.auth-tab-content {
+    display: none;
+}
+
+.auth-tab-content.active {
+    display: block;
+}
+
+#register-success {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: rgba(76, 175, 80, 0.2);
+    border-radius: 4px;
 }
 
 /* Dashboard Layout */

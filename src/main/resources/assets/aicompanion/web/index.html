@@ -9,19 +9,49 @@
 <body>
     <!-- Login Screen -->
     <div id="login-screen" class="login-container">
-        <h2>AI Companion Login</h2>
-        <form id="login-form">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required>
-            </div>
-            <button type="submit">Login</button>
-            <p id="login-error" style="color: var(--danger-color); display: none;">Invalid username or password</p>
-        </form>
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Login</button>
+            <button class="auth-tab" data-tab="register">Register</button>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="login-tab" class="auth-tab-content active">
+            <h2>AI Companion Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit">Login</button>
+                <p id="login-error" style="color: var(--danger-color); display: none;">Invalid username or password</p>
+            </form>
+        </div>
+        
+        <!-- Register Form -->
+        <div id="register-tab" class="auth-tab-content">
+            <h2>Create New Account</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="reg-username">Username</label>
+                    <input type="text" id="reg-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-confirm-password">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" required>
+                </div>
+                <button type="submit">Create Account</button>
+                <p id="register-error" style="color: var(--danger-color); display: none;">Error message here</p>
+                <p id="register-success" style="color: var(--primary-color); display: none;">Account created successfully!</p>
+            </form>
+        </div>
     </div>
     
     <!-- Main Dashboard (Hidden initially) -->

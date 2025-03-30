@@ -9,7 +9,12 @@ let selectedCompanionId = null;
 const loginScreen = document.getElementById('login-screen');
 const dashboard = document.getElementById('dashboard');
 const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
 const loginError = document.getElementById('login-error');
+const registerError = document.getElementById('register-error');
+const registerSuccess = document.getElementById('register-success');
+const authTabs = document.querySelectorAll('.auth-tab');
+const authTabContents = document.querySelectorAll('.auth-tab-content');
 const navLinks = document.querySelectorAll('.nav-link');
 const panels = document.querySelectorAll('.panel');
 const logoutLink = document.getElementById('logout-link');
@@ -29,8 +34,16 @@ function init() {
 
 // Attach all event listeners
 function attachEventListeners() {
+    // Auth tabs
+    authTabs.forEach(tab => {
+        tab.addEventListener('click', handleAuthTabs);
+    });
+    
     // Login form submission
     loginForm.addEventListener('submit', handleLogin);
+    
+    // Register form submission
+    registerForm.addEventListener('submit', handleRegister);
     
     // Navigation links
     navLinks.forEach(link => {
@@ -51,6 +64,84 @@ function attachEventListeners() {
     // Inventory action buttons
     document.getElementById('request-items').addEventListener('click', () => handleInventoryAction('request'));
     document.getElementById('send-items').addEventListener('click', () => handleInventoryAction('send'));
+}
+
+// Handle auth tab switching
+function handleAuthTabs() {
+    const tabName = this.getAttribute('data-tab');
+    
+    // Update active tab
+    authTabs.forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+    });
+    
+    // Update active content
+    authTabContents.forEach(content => {
+        const contentId = content.id;
+        content.classList.toggle('active', contentId === `${tabName}-tab`);
+    });
+    
+    // Reset error messages
+    loginError.style.display = 'none';
+    registerError.style.display = 'none';
+    registerSuccess.style.display = 'none';
+}
+
+// Handle register form submission
+function handleRegister(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('reg-username').value;
+    const password = document.getElementById('reg-password').value;
+    const confirmPassword = document.getElementById('reg-confirm-password').value;
+    
+    // Reset messages
+    registerError.style.display = 'none';
+    registerSuccess.style.display = 'none';
+    
+    // Validate password match
+    if (password !== confirmPassword) {
+        registerError.textContent = 'Passwords do not match';
+        registerError.style.display = 'block';
+        return;
+    }
+    
+    // Send registration request
+    fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || 'Registration failed');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Show success message
+        registerSuccess.textContent = 'Account created successfully! You can now log in.';
+        registerSuccess.style.display = 'block';
+        
+        // Clear form
+        document.getElementById('reg-username').value = '';
+        document.getElementById('reg-password').value = '';
+        document.getElementById('reg-confirm-password').value = '';
+        
+        // Switch to login tab after 2 seconds
+        setTimeout(() => {
+            document.querySelector('.auth-tab[data-tab="login"]').click();
+        }, 2000);
+    })
+    .catch(error => {
+        console.error('Registration error:', error);
+        registerError.textContent = error.message;
+        registerError.style.display = 'block';
+    });
 }
 
 // Handle login form submission
