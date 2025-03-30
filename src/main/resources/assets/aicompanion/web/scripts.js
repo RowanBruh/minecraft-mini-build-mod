@@ -4,6 +4,7 @@
 let authToken = null;
 let webSocket = null;
 let selectedCompanionId = null;
+let selectedSkin = 'default';
 
 // DOM References
 const loginScreen = document.getElementById('login-screen');
@@ -22,6 +23,8 @@ const statusIndicator = document.querySelector('.status-indicator');
 const statusText = document.getElementById('status-text');
 const companionList = document.getElementById('companion-list');
 const selectedCompanionDropdowns = document.querySelectorAll('#selected-companion, #inventory-companion, #settings-companion');
+const settingsTabs = document.querySelectorAll('.settings-tab');
+const settingsContents = document.querySelectorAll('.settings-content');
 
 // Initialize the application
 function init() {
@@ -64,6 +67,22 @@ function attachEventListeners() {
     // Inventory action buttons
     document.getElementById('request-items').addEventListener('click', () => handleInventoryAction('request'));
     document.getElementById('send-items').addEventListener('click', () => handleInventoryAction('send'));
+    
+    // Settings tabs
+    settingsTabs.forEach(tab => {
+        tab.addEventListener('click', handleSettingsTabs);
+    });
+    
+    // Skin upload
+    const skinUpload = document.getElementById('skin-upload');
+    if (skinUpload) {
+        skinUpload.addEventListener('change', handleSkinUpload);
+    }
+    
+    // Default skin options
+    document.querySelectorAll('.skin-option').forEach(option => {
+        option.addEventListener('click', handleSkinSelection);
+    });
 }
 
 // Handle auth tab switching
@@ -250,8 +269,22 @@ function handleWebSocketMessage(message) {
         case 'command_response':
             handleCommandResponse(message.data);
             break;
+        case 'command_result':
+            handleCommandResult(message);
+            break;
         default:
             console.log('Unknown message type:', message.type);
+    }
+}
+
+// Handle specific command results
+function handleCommandResult(message) {
+    if (message.command === 'skin') {
+        if (message.success) {
+            alert('Skin updated successfully!');
+        } else {
+            alert('Failed to update skin: ' + message.message);
+        }
     }
 }
 
@@ -694,6 +727,176 @@ function logout() {
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
 }
+
+// Handle settings tabs
+function handleSettingsTabs() {
+    const tabName = this.getAttribute('data-tab');
+    
+    // Update active tab
+    settingsTabs.forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+    });
+    
+    // Update active content
+    settingsContents.forEach(content => {
+        const contentId = content.id;
+        content.classList.toggle('active', contentId === `${tabName}-settings`);
+    });
+}
+
+// Handle skin upload
+function handleSkinUpload(e) {
+    const file = e.target.files[0];
+    
+    if (!file) {
+        return;
+    }
+    
+    if (!file.type.match('image.*')) {
+        alert('Please select an image file');
+        return;
+    }
+    
+    // Check file size (less than 200KB)
+    if (file.size > 200 * 1024) {
+        alert('File size too large. Please select a file under 200KB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onload = function(fileEvent) {
+        // Preview the uploaded skin
+        const skinPreview = document.getElementById('skin-preview');
+        skinPreview.src = fileEvent.target.result;
+        
+        // Set the selected skin to 'custom'
+        selectedSkin = 'custom';
+        
+        // Clear any previously selected default skins
+        document.querySelectorAll('.skin-option.selected').forEach(option => {
+            option.classList.remove('selected');
+        });
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// Handle default skin selection
+function handleSkinSelection() {
+    const skinType = this.getAttribute('data-skin');
+    
+    // Clear previous selection
+    document.querySelectorAll('.skin-option.selected').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Select this skin
+    this.classList.add('selected');
+    
+    // Update the preview
+    const skinPreview = document.getElementById('skin-preview');
+    skinPreview.src = `skins/${skinType}.png`;
+    
+    // Set the selected skin
+    selectedSkin = skinType;
+    
+    // Clear any custom upload
+    document.getElementById('skin-upload').value = '';
+}
+
+// Save skin settings
+function saveSkinSettings(companionId) {
+    const formData = new FormData();
+    let customSkinPath = '';
+    
+    // If we have a custom skin, add the file
+    if (selectedSkin === 'custom') {
+        const skinUpload = document.getElementById('skin-upload');
+        if (skinUpload.files.length > 0) {
+            formData.append('skin', skinUpload.files[0]);
+        } else {
+            // If 'custom' is selected but no file, revert to default
+            selectedSkin = 'default';
+        }
+    }
+    
+    // Add the selected skin type
+    formData.append('skinType', selectedSkin);
+    
+    // First, upload any custom skin file if needed
+    if (selectedSkin === 'custom' && formData.has('skin')) {
+        // Send file to server
+        fetch(`/api/companions/${companionId}/skin`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to upload skin file');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Skin file uploaded:', data);
+            
+            if (data.skinPath) {
+                customSkinPath = data.skinPath;
+                // Now send the WebSocket command to apply the skin
+                sendSkinCommand(companionId, selectedSkin, customSkinPath);
+            } else {
+                throw new Error('No skin path returned from server');
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading skin file:', error);
+            alert('Failed to upload skin file: ' + error.message);
+        });
+    } else {
+        // If it's not a custom skin or we don't have a file, just send the WebSocket command
+        sendSkinCommand(companionId, selectedSkin, customSkinPath);
+    }
+}
+
+// Send a skin change command via WebSocket
+function sendSkinCommand(companionId, skinType, skinPath = '') {
+    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket not connected');
+        alert('Cannot send command: disconnected from server');
+        return;
+    }
+    
+    const message = {
+        type: 'command',
+        command: 'skin',
+        companionId: companionId,
+        skinType: skinType,
+        skinPath: skinPath
+    };
+    
+    try {
+        webSocket.send(JSON.stringify(message));
+        console.log('Skin command sent:', message);
+    } catch (error) {
+        console.error('Error sending skin command:', error);
+        alert('Failed to send skin command: ' + error.message);
+    }
+}
+
+// Update the saveCompanionSettings function to include skin settings
+const originalSaveCompanionSettings = saveCompanionSettings;
+saveCompanionSettings = function(companionId, settings) {
+    // First, save behavior settings
+    originalSaveCompanionSettings(companionId, settings);
+    
+    // Then, if we're in the skin tab, save skin settings too
+    if (document.getElementById('skin-settings').classList.contains('active')) {
+        saveSkinSettings(companionId);
+    }
+};
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', init);

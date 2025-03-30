@@ -36,6 +36,8 @@ public class AICompanionEntity extends TameableEntity {
     private static final DataParameter<Integer> TARGET_Y = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.INT);
     private static final DataParameter<Integer> TARGET_Z = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.INT);
     private static final DataParameter<Boolean> IS_ACTIVE = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<String> SKIN_TYPE = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.STRING);
+    private static final DataParameter<String> SKIN_PATH = EntityDataManager.defineId(AICompanionEntity.class, DataSerializers.STRING);
     
     private ItemStack heldItem = ItemStack.EMPTY;
     
@@ -63,6 +65,8 @@ public class AICompanionEntity extends TameableEntity {
         this.entityData.define(TARGET_Y, 0);
         this.entityData.define(TARGET_Z, 0);
         this.entityData.define(IS_ACTIVE, true);
+        this.entityData.define(SKIN_TYPE, "default");
+        this.entityData.define(SKIN_PATH, "");
     }
 
     @Override
@@ -73,6 +77,8 @@ public class AICompanionEntity extends TameableEntity {
         compound.putInt("TargetY", this.getTargetY());
         compound.putInt("TargetZ", this.getTargetZ());
         compound.putBoolean("IsActive", this.isActive());
+        compound.putString("SkinType", this.getSkinType());
+        compound.putString("SkinPath", this.getSkinPath());
         
         if (!this.heldItem.isEmpty()) {
             CompoundNBT itemTag = new CompoundNBT();
@@ -89,6 +95,14 @@ public class AICompanionEntity extends TameableEntity {
         this.setTargetY(compound.getInt("TargetY"));
         this.setTargetZ(compound.getInt("TargetZ"));
         this.setActive(compound.getBoolean("IsActive"));
+        
+        if (compound.contains("SkinType")) {
+            this.setSkinType(compound.getString("SkinType"));
+        }
+        
+        if (compound.contains("SkinPath")) {
+            this.setSkinPath(compound.getString("SkinPath"));
+        }
         
         if (compound.contains("HeldItem")) {
             CompoundNBT itemTag = compound.getCompound("HeldItem");
@@ -109,7 +123,9 @@ public class AICompanionEntity extends TameableEntity {
                 player.sendMessage(new StringTextComponent("AI Companion Status: " + 
                         (this.isActive() ? "Active" : "Inactive")), UUID.randomUUID());
                 player.sendMessage(new StringTextComponent("Current Task: " + this.getCurrentTask()), UUID.randomUUID());
-                player.sendMessage(new StringTextComponent("Use commands: /aicompanion <follow|stay|move|break|place>"), UUID.randomUUID());
+                player.sendMessage(new StringTextComponent("Skin: " + this.getSkinType() + 
+                        (this.getSkinPath().isEmpty() ? "" : " (" + this.getSkinPath() + ")")), UUID.randomUUID());
+                player.sendMessage(new StringTextComponent("Use commands: /aicompanion <follow|stay|move|break|place|skin>"), UUID.randomUUID());
             }
             return ActionResultType.SUCCESS;
         }
@@ -193,6 +209,38 @@ public class AICompanionEntity extends TameableEntity {
         }
         return "Unknown";
     }
+    
+    /**
+     * Get the skin type (default, custom, etc.)
+     * @return The skin type
+     */
+    public String getSkinType() {
+        return this.entityData.get(SKIN_TYPE);
+    }
+    
+    /**
+     * Set the skin type
+     * @param skinType The new skin type (default, custom, etc.)
+     */
+    public void setSkinType(String skinType) {
+        this.entityData.set(SKIN_TYPE, skinType);
+    }
+    
+    /**
+     * Get the skin path (for custom skins)
+     * @return The skin path
+     */
+    public String getSkinPath() {
+        return this.entityData.get(SKIN_PATH);
+    }
+    
+    /**
+     * Set the skin path
+     * @param skinPath The path to the custom skin file
+     */
+    public void setSkinPath(String skinPath) {
+        this.entityData.set(SKIN_PATH, skinPath);
+    }
 
     // Command processing methods
     public void processCommand(String command, BlockPos targetPos, ItemStack item) {
@@ -257,6 +305,32 @@ public class AICompanionEntity extends TameableEntity {
                 } else if (this.getOwner() instanceof PlayerEntity) {
                     ((PlayerEntity) this.getOwner()).sendMessage(
                             new StringTextComponent("Cannot place: No valid item specified"), UUID.randomUUID());
+                }
+                break;
+                
+            case "skin":
+                // Command format: /aicompanion skin <type> [path]
+                // Map additional parameters to the skin type and path
+                String skinType = "default";
+                String skinPath = "";
+                
+                if (targetPos != null) {
+                    // We're repurposing targetPos to pass string parameters
+                    // using the coordinates as character codes
+                    skinType = Character.toString((char) targetPos.getX());
+                    if (targetPos.getY() > 0) {
+                        skinPath = Character.toString((char) targetPos.getY());
+                    }
+                }
+                
+                this.setSkinType(skinType);
+                this.setSkinPath(skinPath);
+                
+                if (this.getOwner() instanceof PlayerEntity) {
+                    ((PlayerEntity) this.getOwner()).sendMessage(
+                            new StringTextComponent("AI Companion skin set to: " + skinType + 
+                                    (skinPath.isEmpty() ? "" : " (" + skinPath + ")")), 
+                            UUID.randomUUID());
                 }
                 break;
                 

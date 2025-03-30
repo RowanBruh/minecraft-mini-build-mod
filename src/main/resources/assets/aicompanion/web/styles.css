@@ -329,6 +329,121 @@ button:hover {
     border-radius: 5px;
 }
 
+/* Settings Tabs */
+.settings-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin: 20px 0;
+}
+
+.settings-tab {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.settings-tab:hover {
+    opacity: 1;
+}
+
+.settings-tab.active {
+    opacity: 1;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.settings-content {
+    display: none;
+}
+
+.settings-content.active {
+    display: block;
+}
+
+/* Skin Upload */
+.skin-preview {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.skin-model {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.skin-model img {
+    width: 100px;
+    height: 200px;
+    object-fit: cover;
+    image-rendering: pixelated;
+}
+
+.skin-model p {
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+.default-skins {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.skin-option {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.skin-option:hover {
+    border-color: var(--primary-color);
+}
+
+.skin-option.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.skin-option img {
+    width: 40px;
+    height: 50px;
+    object-fit: cover;
+    image-rendering: pixelated;
+    margin-bottom: 5px;
+}
+
+.skin-option span {
+    display: block;
+    font-size: 12px;
+}
+
+/* File Upload Styling */
+input[type="file"] {
+    max-width: 100%;
+    border: 1px dashed var(--border-color);
+    padding: 10px;
+    border-radius: 4px;
+    background-color: var(--dark-bg);
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     .dashboard {
@@ -346,5 +461,9 @@ button:hover {
     
     .sidebar-nav li {
         margin-right: 10px;
+    }
+    
+    .default-skins {
+        grid-template-columns: repeat(3, 1fr);
     }
 }

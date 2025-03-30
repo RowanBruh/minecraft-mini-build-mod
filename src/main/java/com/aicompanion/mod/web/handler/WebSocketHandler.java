@@ -152,13 +152,35 @@ public class WebSocketHandler {
      * Handle command message
      */
     private void handleCommand(JsonObject json) {
-        // TODO: Process commands
-        // This would be implemented based on your command system
-        
         String command = json.get("command").getAsString();
         AICompanionMod.LOGGER.info("WebSocket command received: " + command);
         
-        // Send acknowledgment
+        // Handle specific commands
+        if (command.equals("skin") && json.has("companionId") && json.has("skinType")) {
+            String companionId = json.get("companionId").getAsString();
+            String skinType = json.get("skinType").getAsString();
+            String skinPath = json.has("skinPath") ? json.get("skinPath").getAsString() : "";
+            
+            // Process the skin command
+            boolean success = processSkinCommand(companionId, skinType, skinPath);
+            
+            JsonObject response = new JsonObject();
+            response.addProperty("type", "command_result");
+            response.addProperty("command", command);
+            response.addProperty("success", success);
+            response.addProperty("message", success ? 
+                    "Skin updated successfully" : 
+                    "Failed to update skin, companion not found or error occurred");
+            
+            try {
+                session.getRemote().sendString(gson.toJson(response));
+            } catch (IOException e) {
+                AICompanionMod.LOGGER.error("Error sending skin command result", e);
+            }
+            return;
+        }
+        
+        // Send acknowledgment for unhandled commands
         JsonObject response = new JsonObject();
         response.addProperty("type", "command_ack");
         response.addProperty("command", command);
@@ -168,6 +190,38 @@ public class WebSocketHandler {
             session.getRemote().sendString(gson.toJson(response));
         } catch (IOException e) {
             AICompanionMod.LOGGER.error("Error sending command acknowledgment", e);
+        }
+    }
+    
+    /**
+     * Process a skin change command
+     * @param companionId Entity ID of the companion
+     * @param skinType Type of skin (default, custom, etc.)
+     * @param skinPath Path to skin file (if custom)
+     * @return true if successful, false otherwise
+     */
+    private boolean processSkinCommand(String companionId, String skinType, String skinPath) {
+        try {
+            // For direct processing, we'd need to get the entity based on ID
+            // This implementation depends on your entity management system
+            
+            // Convert the skinType and skinPath to character codes for BlockPos transfer
+            int typeCode = skinType.charAt(0);
+            int pathCode = skinPath.isEmpty() ? 0 : skinPath.charAt(0);
+            
+            // Schedule a task on the main server thread to process the command
+            AICompanionMod.SERVER.execute(() -> {
+                AICompanionMod.executeEntityCommand(
+                    companionId, 
+                    "skin", 
+                    new net.minecraft.util.math.BlockPos(typeCode, pathCode, 0)
+                );
+            });
+            
+            return true;
+        } catch (Exception e) {
+            AICompanionMod.LOGGER.error("Error processing skin command", e);
+            return false;
         }
     }
 

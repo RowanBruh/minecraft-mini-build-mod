@@ -35,6 +35,9 @@ import org.apache.logging.log4j.Logger;
 public class AICompanionMod {
     public static final String MOD_ID = "aicompanion";
     public static final Logger LOGGER = LogManager.getLogger();
+    
+    // Reference to the Minecraft server instance, set when server starts
+    public static net.minecraft.server.MinecraftServer SERVER;
 
     public AICompanionMod() {
         LOGGER.info("Initializing AI Companion Mod");
@@ -79,6 +82,98 @@ public class AICompanionMod {
             WebServer.getInstance().stop();
         }
     }
+    
+    /**
+     * Execute a command on an entity with the given ID
+     * 
+     * @param entityId The entity ID as a string
+     * @param command The command to execute
+     * @param args Optional arguments encoded in a BlockPos
+     * @return true if command was executed successfully, false otherwise
+     */
+    public static boolean executeEntityCommand(String entityId, String command, net.minecraft.util.math.BlockPos args) {
+        if (SERVER == null) {
+            LOGGER.error("Cannot execute entity command: Server is not running");
+            return false;
+        }
+        
+        try {
+            // Parse the entity ID to a UUID if possible
+            java.util.UUID uuid = null;
+            try {
+                uuid = java.util.UUID.fromString(entityId);
+            } catch (IllegalArgumentException e) {
+                LOGGER.warn("Invalid entity UUID format: " + entityId);
+                // Continue with numeric ID approach
+            }
+            
+            // Search for the entity in all worlds
+            net.minecraft.entity.Entity targetEntity = null;
+            
+            // Try by UUID first if we have one
+            if (uuid != null) {
+                for (net.minecraft.world.server.ServerWorld world : SERVER.getAllLevels()) {
+                    targetEntity = world.getEntity(uuid);
+                    if (targetEntity != null) break;
+                }
+            }
+            
+            // If not found by UUID, try by numeric ID
+            if (targetEntity == null) {
+                try {
+                    int numericId = Integer.parseInt(entityId);
+                    for (net.minecraft.world.server.ServerWorld world : SERVER.getAllLevels()) {
+                        for (net.minecraft.entity.Entity entity : world.getAllEntities()) {
+                            if (entity.getId() == numericId && 
+                                entity instanceof com.aicompanion.mod.entity.AICompanionEntity) {
+                                targetEntity = entity;
+                                break;
+                            }
+                        }
+                        if (targetEntity != null) break;
+                    }
+                } catch (NumberFormatException e) {
+                    LOGGER.error("Entity ID is not a valid UUID or numeric ID: " + entityId);
+                    return false;
+                }
+            }
+            
+            if (targetEntity instanceof com.aicompanion.mod.entity.AICompanionEntity) {
+                com.aicompanion.mod.entity.AICompanionEntity companion = 
+                    (com.aicompanion.mod.entity.AICompanionEntity) targetEntity;
+                
+                // Handle different commands
+                if ("skin".equals(command)) {
+                    int skinType = args.getX();
+                    int skinPath = args.getY();
+                    
+                    // Convert the character codes back to strings
+                    String skinTypeStr = String.valueOf((char) skinType);
+                    String skinPathStr = skinPath > 0 ? String.valueOf((char) skinPath) : "";
+                    
+                    LOGGER.info("Setting skin for companion " + entityId + 
+                               ": type=" + skinTypeStr + ", path=" + skinPathStr);
+                    
+                    // Call the appropriate method on the companion entity
+                    companion.setSkinType(skinTypeStr);
+                    if (!skinPathStr.isEmpty()) {
+                        companion.setSkinPath(skinPathStr);
+                    }
+                    
+                    return true;
+                } else {
+                    LOGGER.warn("Unknown command for AI Companion: " + command);
+                    return false;
+                }
+            } else {
+                LOGGER.error("Entity is not an AI Companion: " + entityId);
+                return false;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error executing entity command", e);
+            return false;
+        }
+    }
 
     private void clientSetup(final FMLClientSetupEvent event) {
         // Register entity renderers
@@ -97,6 +192,9 @@ public class AICompanionMod {
         
         @SubscribeEvent
         public static void onServerStarted(ServerStartedEvent event) {
+            // Store reference to the server
+            SERVER = event.getServer();
+            
             // Start web server if enabled in config
             if (AICompanionConfig.SERVER.enableWebInterface.get()) {
                 LOGGER.info("Starting web interface server");

@@ -33,6 +33,7 @@ public class AICompanionCommand {
                         .suggest("move")
                         .suggest("break")
                         .suggest("place")
+                        .suggest("skin")
                         .suggest("help")
                         .suggest("list")
                         .build())
@@ -150,6 +151,21 @@ public class AICompanionCommand {
                 }
                 break;
                 
+            case "skin":
+                if (pos != null) {
+                    // We're repurposing BlockPos to pass skin parameters
+                    // For "skin" command, X coordinate represents skin type as a character code
+                    // Y coordinate can represent skin path if needed
+                    companion.processCommand("skin", pos, ItemStack.EMPTY);
+                } else {
+                    // Default to "default" skin type if no parameters provided
+                    BlockPos skinParams = new BlockPos((int)'d', 0, 0); // 'd' for "default"
+                    companion.processCommand("skin", skinParams, ItemStack.EMPTY);
+                    player.sendMessage(new StringTextComponent(
+                            "Set AI Companion skin to default type"), UUID.randomUUID());
+                }
+                break;
+                
             default:
                 player.sendMessage(new StringTextComponent("Unknown command: " + command), UUID.randomUUID());
                 displayHelp(player);
@@ -171,6 +187,7 @@ public class AICompanionCommand {
         player.sendMessage(new StringTextComponent("/aicompanion move <x> <y> <z> - Send companion to position"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion break <x> <y> <z> - Make companion break block at position"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion place <x> <y> <z> [item] - Make companion place item at position"), UUID.randomUUID());
+        player.sendMessage(new StringTextComponent("/aicompanion skin [type] [path] - Change companion's skin"), UUID.randomUUID());
         player.sendMessage(new StringTextComponent("/aicompanion list - List all your companions"), UUID.randomUUID());
     }
     
@@ -193,11 +210,14 @@ public class AICompanionCommand {
             double distance = Math.sqrt(companion.distanceToSqr(player));
             
             player.sendMessage(new StringTextComponent(
-                    String.format("#%d: %s at [%d, %d, %d] (%.1f blocks away)",
+                    String.format("#%d: %s at [%d, %d, %d] (%.1f blocks away) - Skin: %s%s",
                             i + 1,
                             companion.isActive() ? "Active" : "Inactive",
                             pos.getX(), pos.getY(), pos.getZ(),
-                            distance)), UUID.randomUUID());
+                            distance,
+                            companion.getSkinType(),
+                            companion.getSkinPath().isEmpty() ? "" : " (" + companion.getSkinPath() + ")")), 
+                    UUID.randomUUID());
         }
     }
 }
