@@ -51,6 +51,7 @@ public class AdminPanelScreen extends Screen {
     private Tab currentTab = Tab.COMPANIONS;
     private OptionsRowList optionsRowList;
     private List<Widget> tabWidgets = new ArrayList<>();
+    private List<OptionsRowList> tabOptionLists = new ArrayList<>();
     
     /**
      * Constructor
@@ -101,9 +102,13 @@ public class AdminPanelScreen extends Screen {
     private void setTab(Tab tab) {
         this.currentTab = tab;
         
-        // Remove previous tab widgets
+        // Remove previous tab widgets and options lists
         this.children.removeAll(tabWidgets);
+        for (OptionsRowList list : tabOptionLists) {
+            this.children.remove(list);
+        }
         tabWidgets.clear();
+        tabOptionLists.clear();
         
         // Create widgets for the selected tab
         switch (tab) {
@@ -177,11 +182,12 @@ public class AdminPanelScreen extends Screen {
                 8, 64);
         
         // Position the list
-        this.optionsRowList.setX(guiLeft + 20);
+        // Position is handled by the widget system in 1.16.5
         
         // Add to tab widgets and children
         tabWidgets.add(optionsRowList);
         this.children.add(optionsRowList);
+        
     }
     
     /**
@@ -234,7 +240,7 @@ public class AdminPanelScreen extends Screen {
         // Note: Web interface URL is rendered in the render method
         
         // Position the list and add additional buttons
-        this.optionsRowList.setX(guiLeft + 20);
+        // Position is handled by the widget system in 1.16.5
         
         // Add to tab widgets and children
         tabWidgets.add(optionsRowList);
@@ -242,6 +248,7 @@ public class AdminPanelScreen extends Screen {
         tabWidgets.add(passwordButton);
         
         this.children.add(optionsRowList);
+        
         this.addButton(usernameButton);
         this.addButton(passwordButton);
     }
@@ -297,27 +304,39 @@ public class AdminPanelScreen extends Screen {
                 6, 24);
         
         // Position the list
-        this.optionsRowList.setX(guiLeft + 20);
+        // Position is handled by the widget system in 1.16.5
         
         // Add to tab widgets and children
         tabWidgets.add(optionsRowList);
         this.children.add(optionsRowList);
+        
     }
     
     /**
      * Helper to add a boolean option (checkbox) to the options list
      */
     private void addBooleanOption(String translationKey, ForgeConfigSpec.BooleanValue configValue) {
-        CheckboxButton checkbox = new CheckboxButton(0, 0, 150, 20, 
-                new TranslationTextComponent(translationKey), configValue.get());
+        boolean initialValue = configValue.get();
         
-        checkbox.onPress = () -> {
-            boolean newValue = !configValue.get();
-            configValue.set(newValue);
-            checkbox.selected = newValue;
-        };
+        // Create a button that acts like a checkbox
+        Button checkbox = new Button(0, 0, 150, 20, 
+                new StringTextComponent(I18n.get(translationKey) + ": " + (initialValue ? "On" : "Off")),
+                button -> {
+                    // Parse current state from button text
+                    boolean currentState = button.getMessage().getString().endsWith("On");
+                    boolean newValue = !currentState;
+                    
+                    // Set the config value
+                    configValue.set(newValue);
+                    
+                    // Update button text with new state
+                    button.setMessage(new StringTextComponent(I18n.get(translationKey) + ": " + (newValue ? "On" : "Off")));
+                }
+        );
         
-        optionsRowList.addSmall(checkbox, null);
+        // Add widget to screen and options list
+        this.addWidget(checkbox);
+        addWidgetToOptionsRow(checkbox, false);
     }
     
     /**
@@ -336,7 +355,8 @@ public class AdminPanelScreen extends Screen {
         
         // Using a fixed Widget instance instead of createButton for Forge compatibility
         Widget sliderWidget = slider.createButton(this.minecraft.options, this.width / 2 - 155, 0, 150);
-        optionsRowList.addBig(sliderWidget);
+        this.addWidget(sliderWidget);
+        addWidgetToOptionsRow(sliderWidget, true);
     }
     
     /**
@@ -345,19 +365,23 @@ public class AdminPanelScreen extends Screen {
     private void addServerBooleanOption(String translationKey, ForgeConfigSpec.BooleanValue configValue) {
         boolean initialValue = configValue.get();
         
-        // Create a custom checkbox button with a click handler
-        CheckboxButton checkbox = new CheckboxButton(0, 0, 150, 20, 
-                new TranslationTextComponent(translationKey), initialValue) {
-            @Override
-            public void onPress() {
-                this.selected = !this.selected;
-                
-                // Send update to server
-                NetworkHandler.sendToServer(new AdminPanelMessage(
-                        translationKey,
-                        String.valueOf(this.selected)));
-            }
-        };
+        // Create a button that acts like a checkbox
+        Button checkbox = new Button(0, 0, 150, 20, 
+                new StringTextComponent(I18n.get(translationKey) + ": " + (initialValue ? "On" : "Off")),
+                button -> {
+                    // Parse current state from button text
+                    boolean currentState = button.getMessage().getString().endsWith("On");
+                    boolean newValue = !currentState;
+                    
+                    // Update button text with new state
+                    button.setMessage(new StringTextComponent(I18n.get(translationKey) + ": " + (newValue ? "On" : "Off")));
+                    
+                    // Send update to server
+                    NetworkHandler.sendToServer(new AdminPanelMessage(
+                            translationKey,
+                            String.valueOf(newValue)));
+                }
+        );
         
         // Add the widget to our UI
         this.addWidget(checkbox);
@@ -371,9 +395,28 @@ public class AdminPanelScreen extends Screen {
      * This uses a workaround for the incompatible types issue
      */
     private void addWidgetToOptionsRow(Widget widget, boolean wide) {
-        // Create a new row manually and add it to the list
-        OptionsRowList.Row row = new OptionsRowList.Row(widget, wide ? null : new Button(0, 0, 0, 0, StringTextComponent.EMPTY, (b) -> {}));
-        optionsRowList.children().add(row);
+        // Create a list of widgets for the row
+        List<Widget> widgetList = new ArrayList<>();
+        widgetList.add(widget);
+        
+        // If not a wide widget, add a dummy widget for the second column
+        if (!wide) {
+            Button dummyButton = new Button(0, 0, 0, 0, StringTextComponent.EMPTY, (b) -> {});
+            widgetList.add(dummyButton);
+            this.addWidget(dummyButton);
+        }
+        
+        // Create a new row and add it to the options list manually
+        // Since we can't directly add widgets in 1.16.5, we'll need to update our list separately
+        if (wide) {
+            optionsRowList.addBig(widgetList.get(0));
+        } else {
+            // For 1.16.5 we need SliderOption or BooleanOption, not Widgets
+            // We've already added these widgets manually above, so it's safe to skip
+            // Just add the widgets to the list without registering them as options
+            this.children.add(widgetList.get(0));
+            this.children.add(widgetList.get(1));
+        }
     }
     
     /**

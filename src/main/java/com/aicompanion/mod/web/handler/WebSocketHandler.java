@@ -13,6 +13,8 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -32,10 +34,29 @@ public class WebSocketHandler {
         this.session = session;
         this.clientId = UUID.randomUUID();
         
-        // For the Jetty implementation, authentication is handled in WebSocketHandlerConfig
-        // The attribute is no longer available in UpgradeRequest
-        Boolean authenticated = false; // This will be set properly when used in the main implementation
-        if (authenticated == null || !authenticated) {
+        // For the Jetty implementation, we'll check the token from the query parameters directly
+        // This simplifies the authentication logic and avoids getServletAttributes() which is not available
+        boolean authenticated = false;
+        String token = null;
+        
+        // Get token from query parameter if present
+        if (session.getUpgradeRequest().getParameterMap().containsKey("token")) {
+            token = session.getUpgradeRequest().getParameterMap().get("token").get(0);
+            
+            try {
+                if (token != null && !token.isEmpty() && com.aicompanion.mod.web.security.JWTManager.getInstance().isTokenValid(token)) {
+                    authenticated = true;
+                }
+            } catch (Exception e) {
+                AICompanionMod.LOGGER.error("Error validating WebSocket token", e);
+            }
+        }
+        
+        // Store authentication status in static map for future checks
+        WebSocketHandlerConfig.setSessionAuthenticated(session, authenticated);
+        
+        // Check if authentication was successful
+        if (!authenticated) {
             // Not authenticated, close the connection
             try {
                 JsonObject message = new JsonObject();
