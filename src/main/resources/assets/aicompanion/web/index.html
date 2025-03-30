@@ -140,25 +140,67 @@
                         </select>
                     </div>
                     
-                    <h3>Behavior Settings</h3>
-                    <div class="form-group">
-                        <label for="companion-name">Companion Name</label>
-                        <input type="text" id="companion-name">
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" data-tab="behavior">Behavior</button>
+                        <button class="settings-tab" data-tab="skin">Skin</button>
                     </div>
-                    <div class="form-group">
-                        <label>Behavior Mode</label>
-                        <div>
-                            <label>
-                                <input type="radio" name="behavior-mode" value="aggressive"> Aggressive
-                            </label>
-                            <label>
-                                <input type="radio" name="behavior-mode" value="defensive"> Defensive
-                            </label>
-                            <label>
-                                <input type="radio" name="behavior-mode" value="passive"> Passive
-                            </label>
+                    
+                    <div id="behavior-settings" class="settings-content active">
+                        <h3>Behavior Settings</h3>
+                        <div class="form-group">
+                            <label for="companion-name">Companion Name</label>
+                            <input type="text" id="companion-name">
+                        </div>
+                        <div class="form-group">
+                            <label>Behavior Mode</label>
+                            <div>
+                                <label>
+                                    <input type="radio" name="behavior-mode" value="aggressive"> Aggressive
+                                </label>
+                                <label>
+                                    <input type="radio" name="behavior-mode" value="defensive"> Defensive
+                                </label>
+                                <label>
+                                    <input type="radio" name="behavior-mode" value="passive"> Passive
+                                </label>
+                            </div>
                         </div>
                     </div>
+                    
+                    <div id="skin-settings" class="settings-content">
+                        <h3>Skin Settings</h3>
+                        <div class="skin-preview">
+                            <div class="skin-model">
+                                <img id="skin-preview" src="placeholder.png" alt="Skin Preview">
+                                <p>Current Skin</p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="skin-upload">Upload New Skin</label>
+                            <input type="file" id="skin-upload" accept=".png">
+                            <p class="help-text">PNG format, 64x32 or 64x64 pixels</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Default Skins</label>
+                            <div class="default-skins">
+                                <div class="skin-option" data-skin="default">
+                                    <img src="skins/default.png" alt="Default">
+                                    <span>Default</span>
+                                </div>
+                                <div class="skin-option" data-skin="wizard">
+                                    <img src="skins/wizard.png" alt="Wizard">
+                                    <span>Wizard</span>
+                                </div>
+                                <div class="skin-option" data-skin="robot">
+                                    <img src="skins/robot.png" alt="Robot">
+                                    <span>Robot</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button id="save-settings">Save Settings</button>
                 </div>
             </div>
