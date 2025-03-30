@@ -184,8 +184,8 @@ public class AdminPanelScreen extends Screen {
         // Position the list
         // Position is handled by the widget system in 1.16.5
         
-        // Add to tab widgets and children
-        tabWidgets.add(optionsRowList);
+        // Add to tab options lists and children
+        tabOptionLists.add(optionsRowList);
         this.children.add(optionsRowList);
         
     }
@@ -242,8 +242,8 @@ public class AdminPanelScreen extends Screen {
         // Position the list and add additional buttons
         // Position is handled by the widget system in 1.16.5
         
-        // Add to tab widgets and children
-        tabWidgets.add(optionsRowList);
+        // Add to tab options lists and tab widgets
+        tabOptionLists.add(optionsRowList);
         tabWidgets.add(usernameButton);
         tabWidgets.add(passwordButton);
         
@@ -306,8 +306,8 @@ public class AdminPanelScreen extends Screen {
         // Position the list
         // Position is handled by the widget system in 1.16.5
         
-        // Add to tab widgets and children
-        tabWidgets.add(optionsRowList);
+        // Add to tab options lists and children
+        tabOptionLists.add(optionsRowList);
         this.children.add(optionsRowList);
         
     }
@@ -409,7 +409,9 @@ public class AdminPanelScreen extends Screen {
         // Create a new row and add it to the options list manually
         // Since we can't directly add widgets in 1.16.5, we'll need to update our list separately
         if (wide) {
-            optionsRowList.addBig(widgetList.get(0));
+            // We can't use addBig with a Widget directly since it requires an AbstractOption
+            // Just add to children collection which should handle the input
+            this.children.add(widgetList.get(0));
         } else {
             // For 1.16.5 we need SliderOption or BooleanOption, not Widgets
             // We've already added these widgets manually above, so it's safe to skip
@@ -492,7 +494,10 @@ public class AdminPanelScreen extends Screen {
         
         // Render tab-specific content
         if (currentTab == Tab.CLIENT_SETTINGS || currentTab == Tab.SERVER_SETTINGS || currentTab == Tab.WEB_INTERFACE) {
-            this.optionsRowList.render(matrixStack, mouseX, mouseY, partialTicks);
+            // Render all option lists for this tab
+            for (OptionsRowList list : tabOptionLists) {
+                list.render(matrixStack, mouseX, mouseY, partialTicks);
+            }
         }
         
         // Render web interface URL and status (read-only)
