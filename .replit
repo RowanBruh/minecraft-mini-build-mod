@@ -1,4 +1,4 @@
-modules = ["java", "java-11"]
+modules = ["java", "java-11", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
@@ -22,6 +22,14 @@ args = "minecraft_mod_build"
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "gradle_build"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "minecraft_server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "web_server"
 
 [[workflows.workflow]]
 name = "Minecraft Mod Build"
@@ -65,5 +73,39 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "./gradlew build --no-daemon"
 
+[[workflows.workflow]]
+name = "minecraft_server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "java -Xmx2G -Xms2G -jar forge-1.16.5-36.2.39-universal.jar nogui"
+waitForPort = 8080
+
+[[workflows.workflow]]
+name = "web_server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
+waitForPort = 5000
+
 [deployment]
 run = ["sh", "-c", "./gradlew build"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
