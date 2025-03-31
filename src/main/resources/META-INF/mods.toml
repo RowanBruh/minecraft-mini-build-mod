@@ -1,26 +1,28 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[36,)"
 license="MIT"
 
 [[mods]]
 modId="aicompanion"
 version="1.0.0"
-displayName="AI Companion Mod"
+displayName="Minecraft Mini Build Mod"
 description='''
-A Minecraft mod that adds an AI-controlled entity that players can command to perform various tasks.
+A Minecraft mod that lets you create interactive miniature replicas of structures.
+Features bidirectional synchronization, wall visibility toggle, and giant player visualization.
+Perfect for architects and builders to design, test, and visualize their creations.
 '''
-authors="AI Companion Dev Team"
+authors="Mini Build Dev Team"
 
 [[dependencies.aicompanion]]
     modId="forge"
     mandatory=true
-    versionRange="[47,)"
+    versionRange="[36,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.aicompanion]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.21.5,1.22)"
+    versionRange="[1.16.5,1.17)"
     ordering="NONE"
     side="BOTH"

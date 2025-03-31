@@ -5,7 +5,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.0.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
 
@@ -15,9 +15,9 @@ apply plugin: 'maven-publish'
 
 version = '1.0.0'
 group = 'com.aicompanion.mod'
-archivesBaseName = 'aicompanion'
+archivesBaseName = 'minecraft-mini-build-mod'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(11)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 
@@ -92,12 +92,12 @@ dependencies {
 jar {
     manifest {
         attributes([
-            "Specification-Title": "aicompanion",
-            "Specification-Vendor": "aicompanion",
+            "Specification-Title": "Minecraft Mini Build Mod",
+            "Specification-Vendor": "Mini Build Dev Team",
             "Specification-Version": "1",
             "Implementation-Title": project.name,
             "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"aicompanion",
+            "Implementation-Vendor" :"Mini Build Dev Team",
             "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
