@@ -138,6 +138,7 @@ public class AICompanionMod {
                 }
             }
             
+            // Handle AI Companion entity commands
             if (targetEntity instanceof com.aicompanion.mod.entity.AICompanionEntity) {
                 com.aicompanion.mod.entity.AICompanionEntity companion = 
                     (com.aicompanion.mod.entity.AICompanionEntity) targetEntity;
@@ -165,8 +166,45 @@ public class AICompanionMod {
                     LOGGER.warn("Unknown command for AI Companion: " + command);
                     return false;
                 }
+            } 
+            // Handle Mini Build entity commands
+            else if (targetEntity instanceof com.aicompanion.mod.entity.MiniBuildEntity) {
+                com.aicompanion.mod.entity.MiniBuildEntity miniBuild = 
+                    (com.aicompanion.mod.entity.MiniBuildEntity) targetEntity;
+                
+                // Toggle wall visibility
+                if ("toggle_walls".equals(command)) {
+                    boolean newState = !miniBuild.isWallsVisible();
+                    miniBuild.setWallsVisible(newState);
+                    LOGGER.info("Toggled walls visibility for mini build " + entityId + ": " + newState);
+                    return true;
+                } 
+                // Toggle giant player visibility
+                else if ("toggle_giant_player".equals(command)) {
+                    boolean newState = !miniBuild.isGiantPlayerVisible();
+                    miniBuild.setGiantPlayerVisible(newState);
+                    LOGGER.info("Toggled giant player visibility for mini build " + entityId + ": " + newState);
+                    return true;
+                }
+                // Update a block in the mini build
+                else if ("update_block".equals(command)) {
+                    int x = args.getX();
+                    int y = args.getY();
+                    int z = args.getZ();
+                    
+                    // This is a simplified implementation
+                    // In a real implementation, you would need to get the block state as well
+                    LOGGER.info("Update block request for mini build " + entityId + 
+                               " at position: " + x + ", " + y + ", " + z);
+                    
+                    // TODO: Implement block update logic
+                    return true;
+                } else {
+                    LOGGER.warn("Unknown command for Mini Build: " + command);
+                    return false;
+                }
             } else {
-                LOGGER.error("Entity is not an AI Companion: " + entityId);
+                LOGGER.error("Entity is not a known mod entity: " + entityId);
                 return false;
             }
         } catch (Exception e) {

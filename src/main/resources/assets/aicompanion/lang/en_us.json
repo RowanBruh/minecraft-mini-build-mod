@@ -1,6 +1,8 @@
 {
   "entity.aicompanion.ai_companion": "AI Companion",
+  "entity.aicompanion.mini_build": "Mini Build",
   "item.aicompanion.ai_companion_spawn_egg": "AI Companion Spawn Egg",
+  "item.aicompanion.mini_build_creator": "Mini Build Creator",
   
   "command.aicompanion.spawn": "Spawns a new AI Companion",
   "command.aicompanion.list": "Lists all your AI Companions",

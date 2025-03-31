@@ -2,8 +2,11 @@ package com.aicompanion.mod.init;
 
 import com.aicompanion.mod.AICompanionMod;
 import com.aicompanion.mod.entity.AICompanionEntity;
+import com.aicompanion.mod.entity.MiniBuildEntity;
 import com.aicompanion.mod.entity.renderer.AICompanionRenderer;
+import com.aicompanion.mod.entity.renderer.MiniBuildRenderer;
 import com.aicompanion.mod.item.AICompanionSpawnEggItem;
+import com.aicompanion.mod.item.MiniBuildCreatorItem;
 
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
@@ -37,6 +40,16 @@ public class ModEntities {
                             EntityClassification.CREATURE)
                     .sized(0.6F, 1.8F)
                     .build("ai_companion"));
+    
+    // Mini Build Entity registration
+    public static final RegistryObject<EntityType<MiniBuildEntity>> MINI_BUILD = 
+            ENTITY_TYPES.register("mini_build", 
+                    () -> EntityType.Builder.<MiniBuildEntity>of(
+                            MiniBuildEntity::new, 
+                            EntityClassification.MISC)
+                    .sized(0.5F, 0.5F) // Small hitbox size
+                    .clientTrackingRange(64) // Visible from further away
+                    .build("mini_build"));
 
     // Spawn egg registration
     public static final RegistryObject<Item> AI_COMPANION_SPAWN_EGG = 
@@ -46,6 +59,14 @@ public class ModEntities {
                             0x4287f5, // Primary color (blue)
                             0xf54242, // Secondary color (red)
                             new Item.Properties().tab(ItemGroup.TAB_MISC)));
+    
+    // Mini Build Creator Item registration
+    public static final RegistryObject<Item> MINI_BUILD_CREATOR = 
+            ITEMS.register("mini_build_creator", 
+                    () -> new MiniBuildCreatorItem(
+                            new Item.Properties()
+                            .tab(ItemGroup.TAB_TOOLS)
+                            .stacksTo(1)));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
@@ -55,6 +76,7 @@ public class ModEntities {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(AI_COMPANION.get(), createAttributes().build());
+        // The MiniBuild entity doesn't need attributes since it's not a living entity
     }
 
     public static void registerEntityAttributes() {
@@ -71,5 +93,6 @@ public class ModEntities {
 
     public static void registerRenderers() {
         RenderingRegistry.registerEntityRenderingHandler(AI_COMPANION.get(), AICompanionRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(MINI_BUILD.get(), MiniBuildRenderer::new);
     }
 }
